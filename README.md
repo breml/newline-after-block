@@ -97,16 +97,16 @@ The linter does not enforce newlines in these cases:
 
 ```go
 func example() {
-    if condition {  // Missing blank line after if block
+    if condition {
         doSomething()
-    }
+    } // missing blank line after if block
     nextStatement()
 }
 
 func loop() {
-    for i := 0; i < 10; i++ {  // Missing blank line after for block
+    for i := 0; i < 10; i++ {
         process(i)
-    }
+    } // missing blank line after for block
     fmt.Println("done")
 }
 ```
