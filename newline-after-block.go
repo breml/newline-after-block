@@ -36,6 +36,11 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				checkStatements(pass, block.List)
 			}
 
+			// Check CaseClause nodes (switch/select case bodies)
+			if caseClause, ok := n.(*ast.CaseClause); ok {
+				checkStatements(pass, caseClause.Body)
+			}
+
 			return true
 		})
 	}
@@ -77,8 +82,14 @@ func checkStatements(pass *analysis.Pass, stmts []ast.Stmt) {
 func needsNewlineAfter(stmt ast.Stmt) bool {
 	switch s := stmt.(type) {
 	case *ast.IfStmt:
-		// If statement without else needs newline
-		return s.Else == nil
+		// If statement with else: check the else branch
+		// If statement without else: needs newline
+		if s.Else != nil {
+			// The else branch itself needs a newline after it
+			return true
+		}
+
+		return true
 	case *ast.ForStmt, *ast.RangeStmt:
 		return true
 	case *ast.SwitchStmt, *ast.TypeSwitchStmt, *ast.SelectStmt:
@@ -92,9 +103,17 @@ func needsNewlineAfter(stmt ast.Stmt) bool {
 func getBlockEnd(stmt ast.Stmt) token.Pos {
 	switch s := stmt.(type) {
 	case *ast.IfStmt:
+		// If there's an else branch, return the end of the entire if-else chain
+		if s.Else != nil {
+			return getBlockEnd(s.Else)
+		}
+		// Otherwise return the end of the if body
 		if s.Body != nil {
 			return s.Body.End()
 		}
+	case *ast.BlockStmt:
+		// Handle else blocks (which are BlockStmt nodes)
+		return s.End()
 	case *ast.ForStmt:
 		if s.Body != nil {
 			return s.Body.End()

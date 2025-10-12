@@ -68,6 +68,14 @@ func nestedStructLiteral() {
 	fmt.Println(c)
 }
 
+func inlineTypeDefinition() {
+	type Company struct {
+		Name    string
+		Address Address
+	}
+	fmt.Println(Company{})
+}
+
 func mixedBlockAndLiteral() {
 	x := 5
 	if x > 0 { // want "missing newline after block statement"
@@ -78,4 +86,49 @@ func mixedBlockAndLiteral() {
 		Age:  30,
 	}
 	fmt.Println(p)
+}
+
+func structLiteralBeforeIf() {
+	p := Person{
+		Name: "John",
+		Age:  30,
+	}
+	if p.Age > 18 { // want "missing newline after block statement"
+		fmt.Println("adult")
+	}
+	fmt.Println(p.Name)
+}
+
+func arrayLiteralBeforeIf() {
+	arr := []int{
+		1,
+		2,
+		3,
+	}
+	if len(arr) > 0 { // want "missing newline after block statement"
+		fmt.Println("not empty")
+	}
+	fmt.Println(arr)
+}
+
+func mapLiteralBeforeIf() {
+	m := map[string]int{
+		"one": 1,
+		"two": 2,
+	}
+	if len(m) > 0 { // want "missing newline after block statement"
+		fmt.Println("not empty")
+	}
+	fmt.Println(m)
+}
+
+func sliceLiteralBeforeIf() {
+	s := []string{
+		"a",
+		"b",
+	}
+	if len(s) > 0 { // want "missing newline after block statement"
+		fmt.Println("not empty")
+	}
+	fmt.Println(s)
 }

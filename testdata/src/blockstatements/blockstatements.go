@@ -37,6 +37,25 @@ func ifElseStatement() {
 	fmt.Println("next statement")
 }
 
+func ifElseStatementWithoutNewline() {
+	x := 5
+	if x > 0 { // want "missing newline after block statement"
+		fmt.Println("positive")
+	} else {
+		fmt.Println("not positive")
+	}
+	fmt.Println("next statement")
+}
+
+func ifElseStatementAtEnd() {
+	x := 5
+	if x > 0 {
+		fmt.Println("positive")
+	} else {
+		fmt.Println("not positive")
+	}
+}
+
 func ifElseIfStatement() {
 	x := 5
 	if x > 0 {
@@ -47,6 +66,18 @@ func ifElseIfStatement() {
 		fmt.Println("zero")
 	}
 
+	fmt.Println("next statement")
+}
+
+func ifElseIfStatementWithoutNewline() {
+	x := 5
+	if x > 0 { // want "missing newline after block statement"
+		fmt.Println("positive")
+	} else if x < 0 {
+		fmt.Println("negative")
+	} else {
+		fmt.Println("zero")
+	}
 	fmt.Println("next statement")
 }
 
@@ -152,4 +183,127 @@ func multipleStatementsWithMixedViolations() {
 	case 5:
 		fmt.Println("five")
 	}
+}
+
+func nestedIfWithoutNewline() {
+	x := 5
+	y := 10
+	if x > 0 { // want "missing newline after block statement"
+		if y > 0 { // want "missing newline after block statement"
+			fmt.Println("both positive")
+		}
+		fmt.Println("x positive")
+	}
+	fmt.Println("after outer if")
+}
+
+func nestedIfWithNewline() {
+	x := 5
+	y := 10
+	if x > 0 {
+		if y > 0 {
+			fmt.Println("both positive")
+		}
+
+		fmt.Println("x positive")
+	}
+
+	fmt.Println("after outer if")
+}
+
+func nestedForWithoutNewline() {
+	for i := 0; i < 3; i++ { // want "missing newline after block statement"
+		for j := 0; j < 3; j++ { // want "missing newline after block statement"
+			fmt.Println(i, j)
+		}
+		fmt.Println("inner loop done")
+	}
+	fmt.Println("after outer loop")
+}
+
+func nestedForWithNewline() {
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
+			fmt.Println(i, j)
+		}
+
+		fmt.Println("inner loop done")
+	}
+
+	fmt.Println("after outer loop")
+}
+
+func nestedSwitchWithoutNewline() {
+	x := 1
+	y := 2
+	switch x { // want "missing newline after block statement"
+	case 1:
+		switch y { // want "missing newline after block statement"
+		case 2:
+			fmt.Println("x=1, y=2")
+		}
+		fmt.Println("x=1")
+	}
+	fmt.Println("after outer switch")
+}
+
+func nestedSwitchWithNewline() {
+	x := 1
+	y := 2
+	switch x {
+	case 1:
+		switch y {
+		case 2:
+			fmt.Println("x=1, y=2")
+		}
+
+		fmt.Println("x=1")
+	}
+
+	fmt.Println("after outer switch")
+}
+
+func complexNested() {
+	for i := 0; i < 3; i++ {
+		if i%2 == 0 {
+			switch i { // want "missing newline after block statement"
+			case 0:
+				fmt.Println("zero")
+			case 2:
+				fmt.Println("two")
+			}
+			fmt.Println("even")
+		}
+
+		fmt.Println("iteration", i)
+	}
+
+	fmt.Println("done")
+}
+
+func typeSwitchWithoutNewline() {
+	var i interface{} = "hello"
+	switch v := i.(type) { // want "missing newline after block statement"
+	case string:
+		fmt.Println("string:", v)
+	case int:
+		fmt.Println("int:", v)
+	default:
+		fmt.Println("unknown type")
+	}
+	fmt.Println("after type switch")
+}
+
+func typeSwitchWithNewline() {
+	var i interface{} = "hello"
+	switch v := i.(type) {
+	case string:
+		fmt.Println("string:", v)
+	case int:
+		fmt.Println("int:", v)
+	default:
+		fmt.Println("unknown type")
+	}
+
+	fmt.Println("after type switch")
 }
