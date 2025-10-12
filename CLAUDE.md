@@ -94,6 +94,16 @@ if condition { // want "missing newline after block statement"
 nextStatement()
 ```
 
+## Coding Standards
+
+When modifying code in this repository, adhere to the following standards:
+
+- **Cognitive Complexity**: Functions must have a cognitive complexity of 20 or less (enforced by golangci-lint with gocognit)
+  - To reduce complexity, extract nested logic into helper functions
+  - Use early returns to reduce nesting
+  - Break down complex functions into smaller, single-purpose functions
+  - The refactoring approach used in this codebase demonstrates how to handle this constraint
+
 ## Go Version
 
 Requires Go 1.25 or later (as specified in go.mod).
