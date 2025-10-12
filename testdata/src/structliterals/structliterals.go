@@ -78,9 +78,9 @@ func inlineTypeDefinition() {
 
 func mixedBlockAndLiteral() {
 	x := 5
-	if x > 0 { // want "missing newline after block statement"
+	if x > 0 {
 		fmt.Println("positive")
-	}
+	} // want "missing newline after block statement"
 	p := Person{
 		Name: "John",
 		Age:  30,
@@ -93,9 +93,9 @@ func structLiteralBeforeIf() {
 		Name: "John",
 		Age:  30,
 	}
-	if p.Age > 18 { // want "missing newline after block statement"
+	if p.Age > 18 {
 		fmt.Println("adult")
-	}
+	} // want "missing newline after block statement"
 	fmt.Println(p.Name)
 }
 
@@ -105,9 +105,9 @@ func arrayLiteralBeforeIf() {
 		2,
 		3,
 	}
-	if len(arr) > 0 { // want "missing newline after block statement"
+	if len(arr) > 0 {
 		fmt.Println("not empty")
-	}
+	} // want "missing newline after block statement"
 	fmt.Println(arr)
 }
 
@@ -116,9 +116,9 @@ func mapLiteralBeforeIf() {
 		"one": 1,
 		"two": 2,
 	}
-	if len(m) > 0 { // want "missing newline after block statement"
+	if len(m) > 0 {
 		fmt.Println("not empty")
-	}
+	} // want "missing newline after block statement"
 	fmt.Println(m)
 }
 
@@ -127,8 +127,8 @@ func sliceLiteralBeforeIf() {
 		"a",
 		"b",
 	}
-	if len(s) > 0 { // want "missing newline after block statement"
+	if len(s) > 0 {
 		fmt.Println("not empty")
-	}
+	} // want "missing newline after block statement"
 	fmt.Println(s)
 }

@@ -72,7 +72,7 @@ func checkStatements(pass *analysis.Pass, stmts []ast.Stmt) {
 
 			// If next statement is immediately after (no blank line)
 			if nextLine == blockEndLine+1 {
-				pass.Reportf(current.Pos(), "missing newline after block statement")
+				pass.Reportf(blockEnd, "missing newline after block statement")
 			}
 		}
 	}

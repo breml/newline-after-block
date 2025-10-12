@@ -4,9 +4,9 @@ import "fmt"
 
 func ifStatementWithoutNewline() {
 	x := 5
-	if x > 0 { // want "missing newline after block statement"
+	if x > 0 {
 		fmt.Println("positive")
-	}
+	} // want "missing newline after block statement"
 	fmt.Println("next statement")
 }
 
@@ -39,11 +39,11 @@ func ifElseStatement() {
 
 func ifElseStatementWithoutNewline() {
 	x := 5
-	if x > 0 { // want "missing newline after block statement"
+	if x > 0 {
 		fmt.Println("positive")
 	} else {
 		fmt.Println("not positive")
-	}
+	} // want "missing newline after block statement"
 	fmt.Println("next statement")
 }
 
@@ -71,20 +71,20 @@ func ifElseIfStatement() {
 
 func ifElseIfStatementWithoutNewline() {
 	x := 5
-	if x > 0 { // want "missing newline after block statement"
+	if x > 0 {
 		fmt.Println("positive")
 	} else if x < 0 {
 		fmt.Println("negative")
 	} else {
 		fmt.Println("zero")
-	}
+	} // want "missing newline after block statement"
 	fmt.Println("next statement")
 }
 
 func forLoopWithoutNewline() {
-	for i := 0; i < 5; i++ { // want "missing newline after block statement"
+	for i := 0; i < 5; i++ {
 		fmt.Println(i)
-	}
+	} // want "missing newline after block statement"
 	fmt.Println("after loop")
 }
 
@@ -104,9 +104,9 @@ func forLoopAtEnd() {
 
 func rangeLoopWithoutNewline() {
 	items := []int{1, 2, 3}
-	for _, item := range items { // want "missing newline after block statement"
+	for _, item := range items {
 		fmt.Println(item)
-	}
+	} // want "missing newline after block statement"
 	fmt.Println("after loop")
 }
 
@@ -121,14 +121,14 @@ func rangeLoopWithNewline() {
 
 func switchStatementWithoutNewline() {
 	x := 2
-	switch x { // want "missing newline after block statement"
+	switch x {
 	case 1:
 		fmt.Println("one")
 	case 2:
 		fmt.Println("two")
 	default:
 		fmt.Println("other")
-	}
+	} // want "missing newline after block statement"
 	fmt.Println("after switch")
 }
 
@@ -148,12 +148,12 @@ func switchStatementWithNewline() {
 
 func selectStatementWithoutNewline() {
 	ch := make(chan int)
-	select { // want "missing newline after block statement"
+	select {
 	case v := <-ch:
 		fmt.Println(v)
 	default:
 		fmt.Println("default")
-	}
+	} // want "missing newline after block statement"
 	fmt.Println("after select")
 }
 
@@ -172,9 +172,9 @@ func selectStatementWithNewline() {
 func multipleStatementsWithMixedViolations() {
 	x := 5
 
-	if x > 0 { // want "missing newline after block statement"
+	if x > 0 {
 		fmt.Println("positive")
-	}
+	} // want "missing newline after block statement"
 	for i := 0; i < x; i++ {
 		fmt.Println(i)
 	}
@@ -188,12 +188,12 @@ func multipleStatementsWithMixedViolations() {
 func nestedIfWithoutNewline() {
 	x := 5
 	y := 10
-	if x > 0 { // want "missing newline after block statement"
-		if y > 0 { // want "missing newline after block statement"
+	if x > 0 {
+		if y > 0 {
 			fmt.Println("both positive")
-		}
+		} // want "missing newline after block statement"
 		fmt.Println("x positive")
-	}
+	} // want "missing newline after block statement"
 	fmt.Println("after outer if")
 }
 
@@ -212,12 +212,12 @@ func nestedIfWithNewline() {
 }
 
 func nestedForWithoutNewline() {
-	for i := 0; i < 3; i++ { // want "missing newline after block statement"
-		for j := 0; j < 3; j++ { // want "missing newline after block statement"
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
 			fmt.Println(i, j)
-		}
+		} // want "missing newline after block statement"
 		fmt.Println("inner loop done")
-	}
+	} // want "missing newline after block statement"
 	fmt.Println("after outer loop")
 }
 
@@ -236,14 +236,14 @@ func nestedForWithNewline() {
 func nestedSwitchWithoutNewline() {
 	x := 1
 	y := 2
-	switch x { // want "missing newline after block statement"
+	switch x {
 	case 1:
-		switch y { // want "missing newline after block statement"
+		switch y {
 		case 2:
 			fmt.Println("x=1, y=2")
-		}
+		} // want "missing newline after block statement"
 		fmt.Println("x=1")
-	}
+	} // want "missing newline after block statement"
 	fmt.Println("after outer switch")
 }
 
@@ -266,12 +266,12 @@ func nestedSwitchWithNewline() {
 func complexNested() {
 	for i := 0; i < 3; i++ {
 		if i%2 == 0 {
-			switch i { // want "missing newline after block statement"
+			switch i {
 			case 0:
 				fmt.Println("zero")
 			case 2:
 				fmt.Println("two")
-			}
+			} // want "missing newline after block statement"
 			fmt.Println("even")
 		}
 
@@ -283,14 +283,14 @@ func complexNested() {
 
 func typeSwitchWithoutNewline() {
 	var i interface{} = "hello"
-	switch v := i.(type) { // want "missing newline after block statement"
+	switch v := i.(type) {
 	case string:
 		fmt.Println("string:", v)
 	case int:
 		fmt.Println("int:", v)
 	default:
 		fmt.Println("unknown type")
-	}
+	} // want "missing newline after block statement"
 	fmt.Println("after type switch")
 }
 
