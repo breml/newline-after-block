@@ -27,3 +27,10 @@ func TestAnalyzerStructLiterals(t *testing.T) {
 	testdata := analysistest.TestData()
 	analysistest.Run(t, testdata, analyzer, "structliterals")
 }
+
+func TestAnalyzerComments(t *testing.T) {
+	analyzer := newlineafterblock.New()
+
+	testdata := analysistest.TestData()
+	analysistest.Run(t, testdata, analyzer, "comments")
+}

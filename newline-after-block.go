@@ -19,7 +19,11 @@ are followed by a blank line, unless:
 - The block is followed by a closing brace
 - The block is followed by another case/default in a switch/select
 
-Composite literals (struct/array/slice literals) are not considered block statements.`
+This rule also applies when a block statement is followed by a comment:
+there should be a blank line between the block and the comment.
+
+Composite literals (struct/array/slice literals) and struct type definitions
+are not considered block statements.`
 
 type newlineafterblock struct {
 	exclude excludePatterns
@@ -58,12 +62,12 @@ func (n *newlineafterblock) run(pass *analysis.Pass) (any, error) {
 		ast.Inspect(file, func(n ast.Node) bool {
 			// Check BlockStmt nodes to find statement sequences.
 			if block, ok := n.(*ast.BlockStmt); ok {
-				checkStatements(pass, block.List)
+				checkStatements(pass, file, block.List)
 			}
 
 			// Check CaseClause nodes (switch/select case bodies).
 			if caseClause, ok := n.(*ast.CaseClause); ok {
-				checkStatements(pass, caseClause.Body)
+				checkStatements(pass, file, caseClause.Body)
 			}
 
 			return true
@@ -74,7 +78,7 @@ func (n *newlineafterblock) run(pass *analysis.Pass) (any, error) {
 }
 
 // checkStatements checks a sequence of statements for missing newlines after blocks.
-func checkStatements(pass *analysis.Pass, stmts []ast.Stmt) {
+func checkStatements(pass *analysis.Pass, astFile *ast.File, stmts []ast.Stmt) {
 	for i := 0; i < len(stmts)-1; i++ {
 		current := stmts[i]
 		next := stmts[i+1]
@@ -95,9 +99,68 @@ func checkStatements(pass *analysis.Pass, stmts []ast.Stmt) {
 			blockEndLine := file.Line(blockEnd)
 			nextLine := file.Line(next.Pos())
 
-			// If next statement is immediately after (no blank line).
-			if nextLine == blockEndLine+1 {
+			// Check if there's a comment between the block and the next statement.
+			// We need to skip inline comments (comments on the same line as the closing brace).
+			foundComment := false
+			for _, commentGroup := range astFile.Comments {
+				if commentGroup.Pos() <= blockEnd || commentGroup.Pos() >= next.Pos() {
+					continue
+				}
+
+				commentLine := file.Line(commentGroup.Pos())
+				// Skip inline comments (on the same line as the closing brace).
+				if commentLine == blockEndLine {
+					continue
+				}
+
+				// Found a comment on a different line.
+				foundComment = true
+				// If comment is on the next line (no blank line).
+				if commentLine == blockEndLine+1 {
+					pass.Reportf(blockEnd, "missing newline after block statement")
+				}
+
+				// Only check the first non-inline comment.
+				break
+			}
+
+			// If no comment was found between the block and next statement,
+			// check if the next statement is immediately after (no blank line).
+			if !foundComment && nextLine == blockEndLine+1 {
 				pass.Reportf(blockEnd, "missing newline after block statement")
+			}
+		}
+	}
+
+	// Also check the last statement if it's followed by a comment.
+	if len(stmts) > 0 {
+		lastStmt := stmts[len(stmts)-1]
+		if needsNewlineAfter(lastStmt) {
+			blockEnd := getBlockEnd(lastStmt)
+			if blockEnd != token.NoPos {
+				file := pass.Fset.File(blockEnd)
+				if file != nil {
+					blockEndLine := file.Line(blockEnd)
+					// Check if there's a comment after the last statement.
+					// Skip inline comments (on the same line as the closing brace).
+					for _, commentGroup := range astFile.Comments {
+						if commentGroup.Pos() > blockEnd {
+							commentLine := file.Line(commentGroup.Pos())
+							// Skip inline comments (on the same line as the closing brace).
+							if commentLine == blockEndLine {
+								continue
+							}
+
+							// If comment is on the next line (no blank line).
+							if commentLine == blockEndLine+1 {
+								pass.Reportf(blockEnd, "missing newline after block statement")
+							}
+
+							// Only check the first comment after the block.
+							break
+						}
+					}
+				}
 			}
 		}
 	}
@@ -132,6 +195,7 @@ func getBlockEnd(stmt ast.Stmt) token.Pos {
 		if s.Else != nil {
 			return getBlockEnd(s.Else)
 		}
+
 		// Otherwise return the end of the if body.
 		if s.Body != nil {
 			return s.Body.End()
