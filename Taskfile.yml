@@ -42,6 +42,7 @@ tasks:
     desc: Run golangci-lint
     silent: true
     cmds:
+      - golangci-lint config verify
       - golangci-lint run
 
   lint-fix:
