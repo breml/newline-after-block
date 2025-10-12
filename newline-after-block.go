@@ -4,12 +4,13 @@ package newlineafterblock
 import (
 	"go/ast"
 	"go/token"
+	"path/filepath"
 
 	"golang.org/x/tools/go/analysis"
 )
 
-// Doc describes what the analyzer does.
-const Doc = `check for newline after block statements
+// doc describes what the analyzer does.
+const doc = `check for newline after block statements
 
 This linter ensures that block statements (if, for, switch, select, etc.)
 are followed by a blank line, unless:
@@ -20,23 +21,47 @@ are followed by a blank line, unless:
 
 Composite literals (struct/array/slice literals) are not considered block statements.`
 
-// Analyzer is the newlineafterblock analyzer.
-var Analyzer = &analysis.Analyzer{
-	Name: "newlineafterblock",
-	Doc:  Doc,
-	Run:  run,
+type newlineafterblock struct {
+	exclude excludePatterns
 }
 
-func run(pass *analysis.Pass) (interface{}, error) {
-	// Inspect all files in the package
+// New creates and returns a new newline-after-block analyzer instance.
+func New() *analysis.Analyzer {
+	nlab := newlineafterblock{}
+
+	analyzer := &analysis.Analyzer{
+		Name: "newlineafterblock",
+		Doc:  doc,
+		Run:  nlab.run,
+	}
+
+	// Register flags on this analyzer instance.
+	analyzer.Flags.Var(&nlab.exclude, "exclude", "regex pattern to exclude files from analysis")
+	analyzer.Flags.Var(&nlab.exclude, "e", "regex pattern to exclude files from analysis (shorthand)")
+
+	return analyzer
+}
+
+func (n *newlineafterblock) run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
+		pos := pass.Fset.Position(file.Pos())
+		relPath, err := filepath.Rel(filepath.Dir(pass.Fset.Position(file.Package).Filename), pos.Filename)
+		if err != nil {
+			relPath = pos.Filename
+		}
+
+		// Check if this file matches any exclude pattern.
+		if n.exclude.matches(relPath) {
+			continue
+		}
+
 		ast.Inspect(file, func(n ast.Node) bool {
-			// Check BlockStmt nodes to find statement sequences
+			// Check BlockStmt nodes to find statement sequences.
 			if block, ok := n.(*ast.BlockStmt); ok {
 				checkStatements(pass, block.List)
 			}
 
-			// Check CaseClause nodes (switch/select case bodies)
+			// Check CaseClause nodes (switch/select case bodies).
 			if caseClause, ok := n.(*ast.CaseClause); ok {
 				checkStatements(pass, caseClause.Body)
 			}
@@ -48,15 +73,15 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	return nil, nil
 }
 
-// checkStatements checks a sequence of statements for missing newlines after blocks
+// checkStatements checks a sequence of statements for missing newlines after blocks.
 func checkStatements(pass *analysis.Pass, stmts []ast.Stmt) {
 	for i := 0; i < len(stmts)-1; i++ {
 		current := stmts[i]
 		next := stmts[i+1]
 
-		// Check if current statement is a block statement that needs a newline
+		// Check if current statement is a block statement that needs a newline.
 		if needsNewlineAfter(current) {
-			// Get the position of the closing brace
+			// Get the position of the closing brace.
 			blockEnd := getBlockEnd(current)
 			if blockEnd == token.NoPos {
 				continue
@@ -70,7 +95,7 @@ func checkStatements(pass *analysis.Pass, stmts []ast.Stmt) {
 			blockEndLine := file.Line(blockEnd)
 			nextLine := file.Line(next.Pos())
 
-			// If next statement is immediately after (no blank line)
+			// If next statement is immediately after (no blank line).
 			if nextLine == blockEndLine+1 {
 				pass.Reportf(blockEnd, "missing newline after block statement")
 			}
@@ -78,14 +103,14 @@ func checkStatements(pass *analysis.Pass, stmts []ast.Stmt) {
 	}
 }
 
-// needsNewlineAfter determines if a statement needs a newline after it
+// needsNewlineAfter determines if a statement needs a newline after it.
 func needsNewlineAfter(stmt ast.Stmt) bool {
 	switch s := stmt.(type) {
 	case *ast.IfStmt:
-		// If statement with else: check the else branch
+		// If statement with else: check the else branch.
 		// If statement without else: needs newline
 		if s.Else != nil {
-			// The else branch itself needs a newline after it
+			// The else branch itself needs a newline after it.
 			return true
 		}
 
@@ -99,20 +124,20 @@ func needsNewlineAfter(stmt ast.Stmt) bool {
 	return false
 }
 
-// getBlockEnd returns the end position of a block statement's body
+// getBlockEnd returns the end position of a block statement's body.
 func getBlockEnd(stmt ast.Stmt) token.Pos {
 	switch s := stmt.(type) {
 	case *ast.IfStmt:
-		// If there's an else branch, return the end of the entire if-else chain
+		// If there's an else branch, return the end of the entire if-else chain.
 		if s.Else != nil {
 			return getBlockEnd(s.Else)
 		}
-		// Otherwise return the end of the if body
+		// Otherwise return the end of the if body.
 		if s.Body != nil {
 			return s.Body.End()
 		}
 	case *ast.BlockStmt:
-		// Handle else blocks (which are BlockStmt nodes)
+		// Handle else blocks (which are BlockStmt nodes).
 		return s.End()
 	case *ast.ForStmt:
 		if s.Body != nil {

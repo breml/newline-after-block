@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	singlechecker.Main(newlineafterblock.Analyzer)
+	singlechecker.Main(newlineafterblock.New())
 }

@@ -282,8 +282,8 @@ func complexNested() {
 }
 
 func typeSwitchWithoutNewline() {
-	var i interface{} = "hello"
-	switch v := i.(type) {
+	a := any("hello")
+	switch v := a.(type) {
 	case string:
 		fmt.Println("string:", v)
 	case int:
@@ -295,8 +295,8 @@ func typeSwitchWithoutNewline() {
 }
 
 func typeSwitchWithNewline() {
-	var i interface{} = "hello"
-	switch v := i.(type) {
+	a := any("hello")
+	switch v := a.(type) {
 	case string:
 		fmt.Println("string:", v)
 	case int:
