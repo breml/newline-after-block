@@ -3,65 +3,78 @@ version: '3'
 tasks:
   default:
     desc: Show available tasks
+    silent: true
     cmds:
       - task --list
 
   build:
     desc: Build the linter binary
+    silent: true
     cmds:
       - go build -o bin/newline-after-block ./cmd/newline-after-block
 
   install:
     desc: Install the linter binary to $GOPATH/bin
+    silent: true
     cmds:
       - go install ./cmd/newline-after-block
 
   test:
     desc: Run all tests
+    silent: true
     cmds:
       - go test -cover ./...
 
   test-verbose:
     desc: Run all tests with verbose output
+    silent: true
     cmds:
       - go test -v -cover ./...
 
   test-coverage:
     desc: Run tests with coverage
+    silent: true
     cmds:
       - go test -v -coverprofile=coverage.out ./...
       - go tool cover -html=coverage.out -o coverage.html
 
   lint:
     desc: Run golangci-lint
+    silent: true
     cmds:
       - golangci-lint run
 
   lint-fix:
     desc: Run golangci-lint with auto-fix
+    silent: true
     cmds:
       - golangci-lint run --fix
 
   run:
     desc: Run the linter on the project itself
+    silent: true
     cmds:
       - go run ./cmd/newline-after-block ./...
 
   clean:
     desc: Clean build artifacts and generated files
+    silent: true
     cmds:
       - rm -rf bin/
       - rm -f coverage.out coverage.html
 
   mod-tidy:
     desc: Tidy Go module dependencies
+    silent: true
     cmds:
       - go mod tidy
 
   verify:
     desc: Run all verification tasks (build, test, lint)
+    silent: true
     cmds:
       - task: mod-tidy
+      - git diff --exit-code go.mod go.sum
       - task: build
       - task: test
       - task: lint
