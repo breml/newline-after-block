@@ -123,9 +123,9 @@ func switchStatementWithoutNewline() {
 	x := 2
 	switch x {
 	case 1:
-		fmt.Println("one")
+		fmt.Println("one") // want "missing newline after case block"
 	case 2:
-		fmt.Println("two")
+		fmt.Println("two") // want "missing newline after case block"
 	default:
 		fmt.Println("other")
 	} // want "missing newline after block statement"
@@ -137,8 +137,10 @@ func switchStatementWithNewline() {
 	switch x {
 	case 1:
 		fmt.Println("one")
+
 	case 2:
 		fmt.Println("two")
+
 	default:
 		fmt.Println("other")
 	}
@@ -150,7 +152,7 @@ func selectStatementWithoutNewline() {
 	ch := make(chan int)
 	select {
 	case v := <-ch:
-		fmt.Println(v)
+		fmt.Println(v) // want "missing newline after case block"
 	default:
 		fmt.Println("default")
 	} // want "missing newline after block statement"
@@ -162,6 +164,7 @@ func selectStatementWithNewline() {
 	select {
 	case v := <-ch:
 		fmt.Println(v)
+
 	default:
 		fmt.Println("default")
 	}
@@ -242,7 +245,9 @@ func nestedSwitchWithoutNewline() {
 		case 2:
 			fmt.Println("x=1, y=2")
 		} // want "missing newline after block statement"
-		fmt.Println("x=1")
+		fmt.Println("x=1") // want "missing newline after case block"
+	case 2:
+		fmt.Println("x=2")
 	} // want "missing newline after block statement"
 	fmt.Println("after outer switch")
 }
@@ -258,6 +263,9 @@ func nestedSwitchWithNewline() {
 		}
 
 		fmt.Println("x=1")
+
+	case 2:
+		fmt.Println("x=2")
 	}
 
 	fmt.Println("after outer switch")
@@ -268,7 +276,7 @@ func complexNested() {
 		if i%2 == 0 {
 			switch i {
 			case 0:
-				fmt.Println("zero")
+				fmt.Println("zero") // want "missing newline after case block"
 			case 2:
 				fmt.Println("two")
 			} // want "missing newline after block statement"
@@ -285,9 +293,9 @@ func typeSwitchWithoutNewline() {
 	a := any("hello")
 	switch v := a.(type) {
 	case string:
-		fmt.Println("string:", v)
+		fmt.Println("string:", v) // want "missing newline after case block"
 	case int:
-		fmt.Println("int:", v)
+		fmt.Println("int:", v) // want "missing newline after case block"
 	default:
 		fmt.Println("unknown type")
 	} // want "missing newline after block statement"
@@ -299,8 +307,10 @@ func typeSwitchWithNewline() {
 	switch v := a.(type) {
 	case string:
 		fmt.Println("string:", v)
+
 	case int:
 		fmt.Println("int:", v)
+
 	default:
 		fmt.Println("unknown type")
 	}

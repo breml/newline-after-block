@@ -86,9 +86,9 @@ func switchWithCommentNoNewline() {
 	x := 2
 	switch x {
 	case 1:
-		fmt.Println("one")
+		fmt.Println("one") // want "missing newline after case block"
 	case 2:
-		fmt.Println("two")
+		fmt.Println("two") // want "missing newline after case block"
 	default:
 		fmt.Println("other")
 	} // want "missing newline after block statement"
@@ -101,8 +101,10 @@ func switchWithCommentAndNewline() {
 	switch x {
 	case 1:
 		fmt.Println("one")
+
 	case 2:
 		fmt.Println("two")
+
 	default:
 		fmt.Println("other")
 	}
@@ -115,9 +117,9 @@ func typeSwitchWithCommentNoNewline() {
 	a := any("hello")
 	switch v := a.(type) {
 	case string:
-		fmt.Println("string:", v)
+		fmt.Println("string:", v) // want "missing newline after case block"
 	case int:
-		fmt.Println("int:", v)
+		fmt.Println("int:", v) // want "missing newline after case block"
 	default:
 		fmt.Println("unknown type")
 	} // want "missing newline after block statement"
@@ -130,8 +132,10 @@ func typeSwitchWithCommentAndNewline() {
 	switch v := a.(type) {
 	case string:
 		fmt.Println("string:", v)
+
 	case int:
 		fmt.Println("int:", v)
+
 	default:
 		fmt.Println("unknown type")
 	}
@@ -144,7 +148,7 @@ func selectWithCommentNoNewline() {
 	ch := make(chan int)
 	select {
 	case v := <-ch:
-		fmt.Println(v)
+		fmt.Println(v) // want "missing newline after case block"
 	default:
 		fmt.Println("default")
 	} // want "missing newline after block statement"
@@ -157,6 +161,7 @@ func selectWithCommentAndNewline() {
 	select {
 	case v := <-ch:
 		fmt.Println(v)
+
 	default:
 		fmt.Println("default")
 	}
