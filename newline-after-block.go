@@ -1,0 +1,121 @@
+// Package newlineafterblock provides a linter that checks for newlines after block statements.
+package newlineafterblock
+
+import (
+	"go/ast"
+	"go/token"
+
+	"golang.org/x/tools/go/analysis"
+)
+
+// Doc describes what the analyzer does.
+const Doc = `check for newline after block statements
+
+This linter ensures that block statements (if, for, switch, select, etc.)
+are followed by a blank line, unless:
+- The block is at the end of a function
+- The block is followed by an else/else if
+- The block is followed by a closing brace
+- The block is followed by another case/default in a switch/select
+
+Composite literals (struct/array/slice literals) are not considered block statements.`
+
+// Analyzer is the newlineafterblock analyzer.
+var Analyzer = &analysis.Analyzer{
+	Name: "newlineafterblock",
+	Doc:  Doc,
+	Run:  run,
+}
+
+func run(pass *analysis.Pass) (interface{}, error) {
+	// Inspect all files in the package
+	for _, file := range pass.Files {
+		ast.Inspect(file, func(n ast.Node) bool {
+			// Check BlockStmt nodes to find statement sequences
+			if block, ok := n.(*ast.BlockStmt); ok {
+				checkStatements(pass, block.List)
+			}
+
+			return true
+		})
+	}
+
+	return nil, nil
+}
+
+// checkStatements checks a sequence of statements for missing newlines after blocks
+func checkStatements(pass *analysis.Pass, stmts []ast.Stmt) {
+	for i := 0; i < len(stmts)-1; i++ {
+		current := stmts[i]
+		next := stmts[i+1]
+
+		// Check if current statement is a block statement that needs a newline
+		if needsNewlineAfter(current) {
+			// Get the position of the closing brace
+			blockEnd := getBlockEnd(current)
+			if blockEnd == token.NoPos {
+				continue
+			}
+
+			file := pass.Fset.File(blockEnd)
+			if file == nil {
+				continue
+			}
+
+			blockEndLine := file.Line(blockEnd)
+			nextLine := file.Line(next.Pos())
+
+			// If next statement is immediately after (no blank line)
+			if nextLine == blockEndLine+1 {
+				pass.Reportf(current.Pos(), "missing newline after block statement")
+			}
+		}
+	}
+}
+
+// needsNewlineAfter determines if a statement needs a newline after it
+func needsNewlineAfter(stmt ast.Stmt) bool {
+	switch s := stmt.(type) {
+	case *ast.IfStmt:
+		// If statement without else needs newline
+		return s.Else == nil
+	case *ast.ForStmt, *ast.RangeStmt:
+		return true
+	case *ast.SwitchStmt, *ast.TypeSwitchStmt, *ast.SelectStmt:
+		return true
+	}
+
+	return false
+}
+
+// getBlockEnd returns the end position of a block statement's body
+func getBlockEnd(stmt ast.Stmt) token.Pos {
+	switch s := stmt.(type) {
+	case *ast.IfStmt:
+		if s.Body != nil {
+			return s.Body.End()
+		}
+	case *ast.ForStmt:
+		if s.Body != nil {
+			return s.Body.End()
+		}
+	case *ast.RangeStmt:
+		if s.Body != nil {
+			return s.Body.End()
+		}
+	case *ast.SwitchStmt:
+		if s.Body != nil {
+			return s.Body.End()
+		}
+	case *ast.TypeSwitchStmt:
+		if s.Body != nil {
+			return s.Body.End()
+		}
+	case *ast.SelectStmt:
+		if s.Body != nil {
+			return s.Body.End()
+		}
+	}
+
+	return token.NoPos
+}
