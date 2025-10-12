@@ -203,6 +203,7 @@ Contributions are welcome! Please follow these guidelines:
 This linter was created to replace a shell script that used `sed` and `grep` to check for newlines after closing braces. The shell script had limitations:
 
 - Could not distinguish between block statements and composite literals
+- Did not handle ending of nested blocks correctly
 
 The new Go-based linter uses the Go AST (Abstract Syntax Tree) to accurately identify block statements and apply the rules correctly.
 
