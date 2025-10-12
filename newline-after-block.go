@@ -4,6 +4,7 @@ package newlineafterblock
 import (
 	"go/ast"
 	"go/token"
+	"os"
 	"path/filepath"
 
 	"golang.org/x/tools/go/analysis"
@@ -47,11 +48,15 @@ func New() *analysis.Analyzer {
 }
 
 func (n *newlineafterblock) run(pass *analysis.Pass) (any, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		wd = ""
+	}
+
 	for _, file := range pass.Files {
-		pos := pass.Fset.Position(file.Pos())
-		relPath, err := filepath.Rel(filepath.Dir(pass.Fset.Position(file.Package).Filename), pos.Filename)
+		relPath, err := filepath.Rel(wd, pass.Fset.Position(file.Package).Filename)
 		if err != nil {
-			relPath = pos.Filename
+			relPath = pass.Fset.Position(file.Package).Filename
 		}
 
 		// Check if this file matches any exclude pattern.
