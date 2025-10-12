@@ -9,6 +9,7 @@ linters:
   enable:
     - bodyclose
     - errcheck
+    - gocognit
     - gocritic
     - godot
     - gosec
@@ -34,14 +35,17 @@ linters:
       check-type-assertions: true
       check-blank: true
 
-    govet:
-      enable-all: true
+    gocognit:
+      min-complexity: 20
 
     gocritic:
       enabled-tags:
         - diagnostic
         - style
         - performance
+
+    govet:
+      enable-all: true
 
     revive:
       rules:
