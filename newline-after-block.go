@@ -85,89 +85,113 @@ func (n *newlineafterblock) run(pass *analysis.Pass) (any, error) {
 // checkStatements checks a sequence of statements for missing newlines after blocks.
 func checkStatements(pass *analysis.Pass, astFile *ast.File, stmts []ast.Stmt) {
 	for i := 0; i < len(stmts)-1; i++ {
-		current := stmts[i]
-		next := stmts[i+1]
-
-		// Check if current statement is a block statement that needs a newline.
-		if needsNewlineAfter(current) {
-			// Get the position of the closing brace.
-			blockEnd := getBlockEnd(current)
-			if blockEnd == token.NoPos {
-				continue
-			}
-
-			file := pass.Fset.File(blockEnd)
-			if file == nil {
-				continue
-			}
-
-			blockEndLine := file.Line(blockEnd)
-			nextLine := file.Line(next.Pos())
-
-			// Check if there's a comment between the block and the next statement.
-			// We need to skip inline comments (comments on the same line as the closing brace).
-			foundComment := false
-			for _, commentGroup := range astFile.Comments {
-				if commentGroup.Pos() <= blockEnd || commentGroup.Pos() >= next.Pos() {
-					continue
-				}
-
-				commentLine := file.Line(commentGroup.Pos())
-				// Skip inline comments (on the same line as the closing brace).
-				if commentLine == blockEndLine {
-					continue
-				}
-
-				// Found a comment on a different line.
-				foundComment = true
-				// If comment is on the next line (no blank line).
-				if commentLine == blockEndLine+1 {
-					pass.Reportf(blockEnd, "missing newline after block statement")
-				}
-
-				// Only check the first non-inline comment.
-				break
-			}
-
-			// If no comment was found between the block and next statement,
-			// check if the next statement is immediately after (no blank line).
-			if !foundComment && nextLine == blockEndLine+1 {
-				pass.Reportf(blockEnd, "missing newline after block statement")
-			}
-		}
+		checkStatementPair(pass, astFile, stmts[i], stmts[i+1])
 	}
 
 	// Also check the last statement if it's followed by a comment.
 	if len(stmts) > 0 {
-		lastStmt := stmts[len(stmts)-1]
-		if needsNewlineAfter(lastStmt) {
-			blockEnd := getBlockEnd(lastStmt)
-			if blockEnd != token.NoPos {
-				file := pass.Fset.File(blockEnd)
-				if file != nil {
-					blockEndLine := file.Line(blockEnd)
-					// Check if there's a comment after the last statement.
-					// Skip inline comments (on the same line as the closing brace).
-					for _, commentGroup := range astFile.Comments {
-						if commentGroup.Pos() > blockEnd {
-							commentLine := file.Line(commentGroup.Pos())
-							// Skip inline comments (on the same line as the closing brace).
-							if commentLine == blockEndLine {
-								continue
-							}
+		checkLastStatement(pass, astFile, stmts[len(stmts)-1])
+	}
+}
 
-							// If comment is on the next line (no blank line).
-							if commentLine == blockEndLine+1 {
-								pass.Reportf(blockEnd, "missing newline after block statement")
-							}
+// checkStatementPair checks if there's proper spacing between two consecutive statements.
+func checkStatementPair(pass *analysis.Pass, astFile *ast.File, current, next ast.Stmt) {
+	if !needsNewlineAfter(current) {
+		return
+	}
 
-							// Only check the first comment after the block.
-							break
-						}
-					}
-				}
-			}
+	blockEnd := getBlockEnd(current)
+	if blockEnd == token.NoPos {
+		return
+	}
+
+	file := pass.Fset.File(blockEnd)
+	if file == nil {
+		return
+	}
+
+	blockEndLine := file.Line(blockEnd)
+	nextLine := file.Line(next.Pos())
+
+	// Check if there's a comment between the block and the next statement.
+	foundComment := checkCommentBetween(pass, astFile, file, blockEnd, blockEndLine, next.Pos())
+
+	// If no comment was found between the block and next statement,
+	// check if the next statement is immediately after (no blank line).
+	if !foundComment && nextLine == blockEndLine+1 {
+		pass.Reportf(blockEnd, "missing newline after block statement")
+	}
+}
+
+// checkCommentBetween checks for comments between a block end and the next statement.
+// Returns true if a non-inline comment was found.
+func checkCommentBetween(pass *analysis.Pass, astFile *ast.File, file *token.File, blockEnd token.Pos, blockEndLine int, nextPos token.Pos) bool {
+	for _, commentGroup := range astFile.Comments {
+		if commentGroup.Pos() <= blockEnd || commentGroup.Pos() >= nextPos {
+			continue
 		}
+
+		commentLine := file.Line(commentGroup.Pos())
+		// Skip inline comments (on the same line as the closing brace).
+		if commentLine == blockEndLine {
+			continue
+		}
+
+		// Found a comment on a different line.
+		// If comment is on the next line (no blank line).
+		if commentLine == blockEndLine+1 {
+			pass.Reportf(blockEnd, "missing newline after block statement")
+		}
+
+		// Only check the first non-inline comment.
+		return true
+	}
+
+	return false
+}
+
+// checkLastStatement checks if the last statement has proper spacing before any trailing comments.
+func checkLastStatement(pass *analysis.Pass, astFile *ast.File, lastStmt ast.Stmt) {
+	if !needsNewlineAfter(lastStmt) {
+		return
+	}
+
+	blockEnd := getBlockEnd(lastStmt)
+	if blockEnd == token.NoPos {
+		return
+	}
+
+	file := pass.Fset.File(blockEnd)
+	if file == nil {
+		return
+	}
+
+	blockEndLine := file.Line(blockEnd)
+
+	// Check if there's a comment after the last statement.
+	checkTrailingComment(pass, astFile, file, blockEnd, blockEndLine)
+}
+
+// checkTrailingComment checks for comments after a block statement.
+func checkTrailingComment(pass *analysis.Pass, astFile *ast.File, file *token.File, blockEnd token.Pos, blockEndLine int) {
+	for _, commentGroup := range astFile.Comments {
+		if commentGroup.Pos() <= blockEnd {
+			continue
+		}
+
+		commentLine := file.Line(commentGroup.Pos())
+		// Skip inline comments (on the same line as the closing brace).
+		if commentLine == blockEndLine {
+			continue
+		}
+
+		// If comment is on the next line (no blank line).
+		if commentLine == blockEndLine+1 {
+			pass.Reportf(blockEnd, "missing newline after block statement")
+		}
+
+		// Only check the first comment after the block.
+		break
 	}
 }
 
