@@ -2,8 +2,9 @@
 package main
 
 import (
-	newlineafterblock "github.com/breml/newline-after-block"
 	"golang.org/x/tools/go/analysis/singlechecker"
+
+	newlineafterblock "github.com/breml/newline-after-block"
 )
 
 func main() {

@@ -65,3 +65,4 @@ tasks:
       - task: build
       - task: test
       - task: lint
+      - task: run
