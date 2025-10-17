@@ -23,6 +23,10 @@ are followed by a blank line, unless:
 This rule also applies when a block statement is followed by a comment:
 there should be a blank line between the block and the comment.
 
+Additionally, this linter enforces blank lines between case clauses within
+switch and select statements. Each case block (except the last) should be
+followed by a blank line to improve readability.
+
 Composite literals (struct/array/slice literals) and struct type definitions
 are not considered block statements.`
 
@@ -54,32 +58,53 @@ func (n *newlineafterblock) run(pass *analysis.Pass) (any, error) {
 	}
 
 	for _, file := range pass.Files {
-		relPath, err := filepath.Rel(wd, pass.Fset.Position(file.Package).Filename)
-		if err != nil {
-			relPath = pass.Fset.Position(file.Package).Filename
-		}
-
-		// Check if this file matches any exclude pattern.
-		if n.exclude.matches(relPath) {
+		if n.shouldSkipFile(pass, file, wd) {
 			continue
 		}
 
-		ast.Inspect(file, func(n ast.Node) bool {
-			// Check BlockStmt nodes to find statement sequences.
-			if block, ok := n.(*ast.BlockStmt); ok {
-				checkStatements(pass, file, block.List)
-			}
-
-			// Check CaseClause nodes (switch/select case bodies).
-			if caseClause, ok := n.(*ast.CaseClause); ok {
-				checkStatements(pass, file, caseClause.Body)
-			}
-
+		ast.Inspect(file, func(node ast.Node) bool {
+			n.inspectNode(pass, file, node)
 			return true
 		})
 	}
 
 	return nil, nil
+}
+
+// shouldSkipFile determines if a file should be skipped based on exclude patterns.
+func (n *newlineafterblock) shouldSkipFile(pass *analysis.Pass, file *ast.File, wd string) bool {
+	relPath, err := filepath.Rel(wd, pass.Fset.Position(file.Package).Filename)
+	if err != nil {
+		relPath = pass.Fset.Position(file.Package).Filename
+	}
+
+	return n.exclude.matches(relPath)
+}
+
+// inspectNode inspects an AST node and performs appropriate checks.
+func (n *newlineafterblock) inspectNode(pass *analysis.Pass, file *ast.File, node ast.Node) {
+	switch n := node.(type) {
+	case *ast.BlockStmt:
+		checkStatements(pass, file, n.List)
+
+	case *ast.CaseClause:
+		checkStatements(pass, file, n.Body)
+
+	case *ast.SwitchStmt:
+		if n.Body != nil {
+			checkCaseClauses(pass, file, n.Body.List)
+		}
+
+	case *ast.TypeSwitchStmt:
+		if n.Body != nil {
+			checkCaseClauses(pass, file, n.Body.List)
+		}
+
+	case *ast.SelectStmt:
+		if n.Body != nil {
+			checkCommClauses(pass, file, n.Body.List)
+		}
+	}
 }
 
 // checkStatements checks a sequence of statements for missing newlines after blocks.
@@ -195,6 +220,140 @@ func checkTrailingComment(pass *analysis.Pass, astFile *ast.File, file *token.Fi
 	}
 }
 
+// checkCaseClauses checks that case clauses in switch/select statements are properly spaced.
+// Each case clause (except the last) should be followed by a blank line.
+func checkCaseClauses(pass *analysis.Pass, astFile *ast.File, stmts []ast.Stmt) {
+	caseClauses := extractCaseClauses(stmts)
+	if len(caseClauses) < 2 {
+		return
+	}
+
+	// Check spacing between consecutive case clauses.
+	for i := 0; i < len(caseClauses)-1; i++ {
+		checkCaseClauseSpacing(pass, astFile, caseClauses[i], caseClauses[i+1])
+	}
+}
+
+// extractCaseClauses filters statements to only CaseClause nodes.
+func extractCaseClauses(stmts []ast.Stmt) []*ast.CaseClause {
+	var caseClauses []*ast.CaseClause
+	for _, stmt := range stmts {
+		if caseClause, ok := stmt.(*ast.CaseClause); ok {
+			caseClauses = append(caseClauses, caseClause)
+		}
+	}
+
+	return caseClauses
+}
+
+// checkCaseClauseSpacing checks spacing between two consecutive case clauses.
+func checkCaseClauseSpacing(pass *analysis.Pass, astFile *ast.File, current, next *ast.CaseClause) {
+	// Skip empty case clauses (no body statements).
+	if len(current.Body) == 0 {
+		return
+	}
+
+	lastStmt := current.Body[len(current.Body)-1]
+	lastStmtEnd := lastStmt.End()
+
+	file := pass.Fset.File(lastStmtEnd)
+	if file == nil {
+		return
+	}
+
+	lastStmtLine := file.Line(lastStmtEnd)
+	nextCaseLine := file.Line(next.Pos())
+
+	// Check if there's a comment between the last statement and the next case.
+	foundComment := checkClauseComment(pass, astFile, file, lastStmtEnd, lastStmtLine, next.Pos())
+
+	// If no comment was found, check if the next case is immediately after.
+	if !foundComment && nextCaseLine == lastStmtLine+1 {
+		pass.Reportf(lastStmtEnd, "missing newline after case block")
+	}
+}
+
+// checkClauseComment checks for comments between two clause positions and reports violations.
+// Returns true if a non-inline comment was found.
+func checkClauseComment(pass *analysis.Pass, astFile *ast.File, file *token.File, endPos token.Pos, endLine int, nextPos token.Pos) bool {
+	for _, commentGroup := range astFile.Comments {
+		commentPos := commentGroup.Pos()
+		if commentPos <= endPos || commentPos >= nextPos {
+			continue
+		}
+
+		commentLine := file.Line(commentPos)
+		// Skip inline comments (on the same line as the end position).
+		if commentLine == endLine {
+			continue
+		}
+
+		// If comment is on the next line (no blank line).
+		if commentLine == endLine+1 {
+			pass.Reportf(endPos, "missing newline after case block")
+		}
+
+		// Only check the first non-inline comment.
+		return true
+	}
+
+	return false
+}
+
+// checkCommClauses checks that comm clauses in select statements are properly spaced.
+// Each comm clause (except the last) should be followed by a blank line.
+// CommClause is used for select statements, similar to CaseClause for switch statements.
+func checkCommClauses(pass *analysis.Pass, astFile *ast.File, stmts []ast.Stmt) {
+	commClauses := extractCommClauses(stmts)
+	if len(commClauses) < 2 {
+		return
+	}
+
+	// Check spacing between consecutive comm clauses.
+	for i := 0; i < len(commClauses)-1; i++ {
+		checkCommClauseSpacing(pass, astFile, commClauses[i], commClauses[i+1])
+	}
+}
+
+// extractCommClauses filters statements to only CommClause nodes.
+func extractCommClauses(stmts []ast.Stmt) []*ast.CommClause {
+	var commClauses []*ast.CommClause
+	for _, stmt := range stmts {
+		if commClause, ok := stmt.(*ast.CommClause); ok {
+			commClauses = append(commClauses, commClause)
+		}
+	}
+
+	return commClauses
+}
+
+// checkCommClauseSpacing checks spacing between two consecutive comm clauses.
+func checkCommClauseSpacing(pass *analysis.Pass, astFile *ast.File, current, next *ast.CommClause) {
+	// Skip empty comm clauses (no body statements).
+	if len(current.Body) == 0 {
+		return
+	}
+
+	lastStmt := current.Body[len(current.Body)-1]
+	lastStmtEnd := lastStmt.End()
+
+	file := pass.Fset.File(lastStmtEnd)
+	if file == nil {
+		return
+	}
+
+	lastStmtLine := file.Line(lastStmtEnd)
+	nextCommLine := file.Line(next.Pos())
+
+	// Check if there's a comment between the last statement and the next comm.
+	foundComment := checkClauseComment(pass, astFile, file, lastStmtEnd, lastStmtLine, next.Pos())
+
+	// If no comment was found, check if the next comm is immediately after.
+	if !foundComment && nextCommLine == lastStmtLine+1 {
+		pass.Reportf(lastStmtEnd, "missing newline after case block")
+	}
+}
+
 // needsNewlineAfter determines if a statement needs a newline after it.
 func needsNewlineAfter(stmt ast.Stmt) bool {
 	switch s := stmt.(type) {
@@ -207,8 +366,10 @@ func needsNewlineAfter(stmt ast.Stmt) bool {
 		}
 
 		return true
+
 	case *ast.ForStmt, *ast.RangeStmt:
 		return true
+
 	case *ast.SwitchStmt, *ast.TypeSwitchStmt, *ast.SelectStmt:
 		return true
 	}
@@ -229,25 +390,31 @@ func getBlockEnd(stmt ast.Stmt) token.Pos {
 		if s.Body != nil {
 			return s.Body.End()
 		}
+
 	case *ast.BlockStmt:
 		// Handle else blocks (which are BlockStmt nodes).
 		return s.End()
+
 	case *ast.ForStmt:
 		if s.Body != nil {
 			return s.Body.End()
 		}
+
 	case *ast.RangeStmt:
 		if s.Body != nil {
 			return s.Body.End()
 		}
+
 	case *ast.SwitchStmt:
 		if s.Body != nil {
 			return s.Body.End()
 		}
+
 	case *ast.TypeSwitchStmt:
 		if s.Body != nil {
 			return s.Body.End()
 		}
+
 	case *ast.SelectStmt:
 		if s.Body != nil {
 			return s.Body.End()

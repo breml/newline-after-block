@@ -34,3 +34,10 @@ func TestAnalyzerComments(t *testing.T) {
 	testdata := analysistest.TestData()
 	analysistest.Run(t, testdata, analyzer, "comments")
 }
+
+func TestAnalyzerCaseClauses(t *testing.T) {
+	analyzer := newlineafterblock.New()
+
+	testdata := analysistest.TestData()
+	analysistest.Run(t, testdata, analyzer, "caseclauses")
+}

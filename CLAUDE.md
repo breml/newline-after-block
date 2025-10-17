@@ -12,8 +12,9 @@ The project has a simple but well-organized structure:
 
 - **`newline-after-block.go`**: Core analyzer implementation
   - Defines the `Analyzer` using the `analysis.Analyzer` framework
-  - `run()` function inspects AST nodes looking for `BlockStmt` nodes
+  - `run()` function inspects AST nodes looking for `BlockStmt`, `SwitchStmt`, `TypeSwitchStmt`, and `SelectStmt` nodes
   - `checkStatements()` validates statement sequences for proper blank line spacing
+  - `checkCaseClauses()` validates spacing between case clauses in switch/select statements
   - `needsNewlineAfter()` determines which statement types require blank lines (if without else, for, range, switch, type switch, select)
   - `getBlockEnd()` extracts the end position of block statement bodies
 
@@ -24,6 +25,7 @@ The project has a simple but well-organized structure:
 - **Test structure**: Uses `analysistest` framework
   - Test cases are in `testdata/src/` organized by package name
   - `testdata/src/blockstatements/` - tests for block statements (if, for, switch, etc.)
+  - `testdata/src/caseclauses/` - tests for case clause spacing within switch/select statements
   - `testdata/src/structliterals/` - tests ensuring composite literals are not flagged
   - Tests use special `// want "..."` comments to verify expected diagnostics
 
@@ -35,6 +37,12 @@ The analyzer enforces blank lines after these block statements:
 - `for` loops and `range` loops
 - `switch` and type `switch` statements
 - `select` statements
+
+Additionally, the analyzer enforces blank lines between case clauses:
+
+- Each case block within `switch`, type `switch`, and `select` statements must be followed by a blank line
+- Exception: The last case block does not require a blank line before the closing brace
+- Empty case blocks are skipped
 
 It correctly ignores:
 
