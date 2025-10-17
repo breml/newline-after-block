@@ -18,10 +18,13 @@ The project has a simple but well-organized structure:
   - `run()` function inspects AST nodes looking for `BlockStmt`, `SwitchStmt`, `TypeSwitchStmt`, and `SelectStmt` nodes
   - `checkStatements()` validates statement sequences for proper blank line spacing
   - `checkCaseClauses()` validates spacing between case clauses in switch/select statements
-  - `needsNewlineAfter()` determines which statement types require blank lines (if without else, for, range, switch, type switch, select)
+  - `needsNewlineAfter()` determines which statement types require blank lines (if without else, for, range, switch, type switch, select, defer)
   - `getBlockEnd()` extracts the end position of block statement bodies
   - `createDiagnosticWithFix()` creates diagnostics with suggested fixes to automatically insert blank lines
   - `findEndOfLine()` determines the correct position to insert newlines (handles inline comments)
+  - `isErrorCheckIfStmt()` detects the `if err != nil` pattern for defer exceptions
+  - `isErrNotNilPattern()` helper for error pattern matching
+  - `isDeferStmt()` identifies defer statements
 
 - **`cmd/newline-after-block/main.go`**: Command-line entry point
   - Uses `singlechecker.Main()` to create a standalone linter binary
@@ -32,6 +35,7 @@ The project has a simple but well-organized structure:
   - `testdata/src/blockstatements/` - tests for block statements (if, for, switch, etc.)
   - `testdata/src/caseclauses/` - tests for case clause spacing within switch/select statements
   - `testdata/src/structliterals/` - tests ensuring composite literals are not flagged
+  - `testdata/src/deferpattern/` - tests for defer statement patterns after error checks
   - Tests use special `// want "..."` comments to verify expected diagnostics
   - Golden files (`.go.golden`) contain expected output after applying automatic fixes
   - `analysistest.RunWithSuggestedFixes()` verifies fixes produce correct output
@@ -56,6 +60,13 @@ It correctly ignores:
 - Blocks at the end of statement lists (implicit)
 - `if` statements followed by `else` or `else if`
 - Composite literals (struct, array, slice, map literals)
+
+Special handling for `defer` statements:
+
+- `defer` statements can immediately follow error-checking `if <error> != nil` blocks without blank lines (idiomatic Go cleanup pattern)
+- Error detection is type-based: any variable whose type implements the `error` interface is recognized, regardless of its name
+- Multiple consecutive `defer` statements do not require blank lines between them
+- A blank line IS required after `defer` statement(s) before any non-defer statement
 
 ## Autofix Capability
 
