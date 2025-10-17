@@ -4,6 +4,7 @@ package newlineafterblock
 import (
 	"go/ast"
 	"go/token"
+	"go/types"
 	"os"
 	"path/filepath"
 
@@ -19,6 +20,7 @@ are followed by a blank line, unless:
 - The block is followed by an else/else if
 - The block is followed by a closing brace
 - The block is followed by another case/default in a switch/select
+- The block is an error-checking if statement (if <error> != nil) followed by a defer
 
 This rule also applies when a block statement is followed by a comment:
 there should be a blank line between the block and the comment.
@@ -26,6 +28,13 @@ there should be a blank line between the block and the comment.
 Additionally, this linter enforces blank lines between case clauses within
 switch and select statements. Each case block (except the last) should be
 followed by a blank line to improve readability.
+
+Special handling for defer statements:
+- Defer statements can immediately follow error-checking if statements (if <error> != nil)
+  without a blank line (idiomatic Go pattern for cleanup)
+- Error detection is type-based: any variable implementing the error interface is recognized
+- Multiple consecutive defer statements do not require blank lines between them
+- A blank line is required after defer statement(s) before any non-defer statement
 
 Composite literals (struct/array/slice literals) and struct type definitions
 are not considered block statements.
@@ -124,6 +133,16 @@ func checkStatements(pass *analysis.Pass, astFile *ast.File, stmts []ast.Stmt) {
 
 // checkStatementPair checks if there's proper spacing between two consecutive statements.
 func checkStatementPair(pass *analysis.Pass, astFile *ast.File, current, next ast.Stmt) {
+	// Exception: Allow defer immediately after error-checking if statement.
+	if isErrorCheckIfStmt(pass, current) && isDeferStmt(next) {
+		return
+	}
+
+	// Exception: Allow consecutive defer statements without blank line.
+	if isDeferStmt(current) && isDeferStmt(next) {
+		return
+	}
+
 	if !needsNewlineAfter(current) {
 		return
 	}
@@ -442,9 +461,165 @@ func needsNewlineAfter(stmt ast.Stmt) bool {
 
 	case *ast.DeclStmt:
 		return checkDeclStmt(s) != nil
+
+	case *ast.DeferStmt:
+		// Defer statements need newlines when followed by non-defer statements.
+		// The exception (consecutive defers) is handled in checkStatementPair.
+		return true
 	}
 
 	return false
+}
+
+// isErrorCheckIfStmt checks if an if statement matches the pattern "if <error> != nil".
+func isErrorCheckIfStmt(pass *analysis.Pass, stmt ast.Stmt) bool {
+	ifStmt, ok := stmt.(*ast.IfStmt)
+	if !ok {
+		return false
+	}
+
+	// Check if the condition is a binary expression.
+	binaryExpr, ok := ifStmt.Cond.(*ast.BinaryExpr)
+	if !ok {
+		return false
+	}
+
+	// Check if the operator is !=.
+	if binaryExpr.Op != token.NEQ {
+		return false
+	}
+
+	// Check if one operand is a variable implementing error interface and the other is nil.
+	return isErrNotNilPattern(pass, binaryExpr.X, binaryExpr.Y) || isErrNotNilPattern(pass, binaryExpr.Y, binaryExpr.X)
+}
+
+// isErrNotNilPattern checks if x is a variable implementing the error interface and y is nil.
+func isErrNotNilPattern(pass *analysis.Pass, x, y ast.Expr) bool {
+	ident, ok := x.(*ast.Ident)
+	if !ok {
+		return false
+	}
+
+	// Check if y is nil.
+	nilIdent, ok := y.(*ast.Ident)
+	if !ok || nilIdent.Name != "nil" {
+		return false
+	}
+
+	// Check if x has a type that implements the error interface.
+	if pass.TypesInfo == nil {
+		return false
+	}
+
+	typ := pass.TypesInfo.TypeOf(ident)
+	if typ == nil {
+		return false
+	}
+
+	// Check if the type implements the error interface.
+	return implementsError(typ)
+}
+
+// implementsError checks if a type implements the error interface.
+func implementsError(typ types.Type) bool {
+	// Check if this is the error interface itself
+	if isErrorInterface(typ) {
+		return true
+	}
+
+	// Check if the underlying type is an interface that embeds or defines error
+	if isInterfaceWithError(typ) {
+		return true
+	}
+
+	// Check if the type has Error() string method (value receiver)
+	if hasErrorMethod(typ) {
+		return true
+	}
+
+	// Check with pointer receiver
+	return hasErrorMethod(types.NewPointer(typ))
+}
+
+// isErrorInterface checks if the type is the built-in error interface.
+func isErrorInterface(typ types.Type) bool {
+	named, ok := typ.(*types.Named)
+	if !ok {
+		return false
+	}
+
+	obj := named.Obj()
+	return obj != nil && obj.Name() == "error" && obj.Pkg() == nil
+}
+
+// isInterfaceWithError checks if an interface type embeds error or has Error() string.
+func isInterfaceWithError(typ types.Type) bool {
+	iface, ok := typ.Underlying().(*types.Interface)
+	if !ok {
+		return false
+	}
+
+	// Check embedded interfaces
+	for i := 0; i < iface.NumEmbeddeds(); i++ {
+		if isErrorInterface(iface.EmbeddedType(i)) {
+			return true
+		}
+	}
+
+	// Check methods
+	for i := 0; i < iface.NumMethods(); i++ {
+		if isErrorMethod(iface.Method(i)) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// hasErrorMethod checks if a type has the Error() string method.
+func hasErrorMethod(typ types.Type) bool {
+	methodSet := types.NewMethodSet(typ)
+	for i := 0; i < methodSet.Len(); i++ {
+		method := methodSet.At(i).Obj()
+		if fn, ok := method.(*types.Func); ok && isErrorMethod(fn) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isErrorMethod checks if a function matches the signature of error.Error() string.
+func isErrorMethod(fn *types.Func) bool {
+	if fn.Name() != "Error" {
+		return false
+	}
+
+	sig, ok := fn.Type().(*types.Signature)
+	if !ok {
+		return false
+	}
+
+	// Error() should have no parameters
+	if sig.Params() != nil && sig.Params().Len() != 0 {
+		return false
+	}
+
+	// Error() should return exactly one value of type string
+	results := sig.Results()
+	if results == nil || results.Len() != 1 {
+		return false
+	}
+
+	result := results.At(0)
+	basic, ok := result.Type().(*types.Basic)
+	return ok && basic.Kind() == types.String
+}
+
+// isDeferStmt checks if a statement is a defer statement.
+func isDeferStmt(stmt ast.Stmt) bool {
+	_, ok := stmt.(*ast.DeferStmt)
+	return ok
 }
 
 // getBlockEnd returns the end position of a block statement's body.
@@ -499,6 +674,10 @@ func getBlockEnd(stmt ast.Stmt) token.Pos {
 		if funcLit := checkDeclStmt(s); funcLit != nil && funcLit.Body != nil {
 			return funcLit.Body.End()
 		}
+
+	case *ast.DeferStmt:
+		// For defer statements, return the end position of the statement.
+		return s.End()
 	}
 
 	return token.NoPos
