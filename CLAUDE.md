@@ -101,6 +101,72 @@ go run ./cmd/newline-after-block ./...
 task verify                   # Runs mod-tidy, build, test, lint
 ```
 
+## GitHub Integration
+
+For all GitHub-related tasks, use the `gh` command-line tool:
+
+- **Pull Requests**: Use `gh pr create`, `gh pr view`, `gh pr list`, etc.
+- **Issues**: Use `gh issue create`, `gh issue view`, `gh issue list`, etc.
+- **Repository Information**: Use `gh repo view` to get repository details
+- **GitHub URLs**: When given a GitHub URL, use the appropriate `gh` command to retrieve the information
+
+Examples:
+
+```bash
+gh pr create --title "feat: Add new feature" --body "Description"
+gh pr view 123
+gh issue list --state open
+gh repo view
+```
+
+The `gh` CLI provides a consistent and reliable interface for GitHub operations and should be preferred over direct API calls or web scraping.
+
+## Commit Messages and PR Descriptions
+
+### Commit Messages
+
+Commit messages should be brief and to the point, following the Conventional Commits specification. Use the following prefixes:
+
+- `fix` - Bug fixes
+- `feat` - New features
+- `docs` - Documentation changes
+- `chore` - Maintenance tasks, dependency updates, etc.
+- `pep` - Project Enhancement Proposals (used when adding new proposals to `admin/pep`)
+
+Format: `<type>: <brief description>`
+
+Examples:
+```
+fix: Correct case clause spacing detection
+feat: Add support for nested switch statements
+docs: Update installation instructions
+chore: Update dependencies to latest versions
+pep: Add proposal for multi-file analysis support
+```
+
+### PR Descriptions
+
+Pull request descriptions should be brief and to the point. Focus on:
+- What changes were made (bullet points preferred)
+- Why the changes were necessary (if not obvious)
+- Avoid lengthy explanations unless the changes are complex
+
+## Code Update Requirements
+
+Whenever the code base is updated, ensure all of the following requirements are met:
+
+1. **Tests**: All new code must have corresponding tests that verify the new functionality
+2. **Formatting**: Code must be formatted using `gofumpt`
+3. **Linting**: Code must be fully compliant with the golangci-lint configuration
+4. **Verification**: Run `task verify` - it must complete without errors
+5. **Documentation**:
+   - Update `README.md` if the changes affect user-facing functionality or usage
+   - Review and update `CLAUDE.md` if the changes affect architecture, development workflow, or coding standards
+
+### Temporary Files
+
+For temporary files or test artifacts, use the `.scratch/tmp/` directory.
+
 ## Adding Test Cases
 
 When adding new test cases, create or modify files in `testdata/src/<packagename>/`. Use `analysistest` comment directives:
