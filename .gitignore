@@ -36,6 +36,7 @@ vendor/
 .claude/
 
 # Temporary files
+.scratch/
 tmp/
 temp/
 *.tmp
