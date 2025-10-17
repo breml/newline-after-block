@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-`newline-after-block` is a Go static analysis tool (linter) that enforces blank lines after block statements to improve code readability. It's built using the `golang.org/x/tools/go/analysis` framework and can be used standalone or integrated with golangci-lint.
+`newline-after-block` is a Go static analysis tool (linter) that enforces blank lines after block statements to improve code readability. It's built using the `golang.org/x/tools/go/analysis` framework and can be used standalone or integrated with golangci-lint. The analyzer supports automatic fixes that can insert missing blank lines via the `-fix` flag or through IDE quick-fix suggestions.
 
 ## Architecture
 
@@ -17,6 +17,8 @@ The project has a simple but well-organized structure:
   - `checkCaseClauses()` validates spacing between case clauses in switch/select statements
   - `needsNewlineAfter()` determines which statement types require blank lines (if without else, for, range, switch, type switch, select)
   - `getBlockEnd()` extracts the end position of block statement bodies
+  - `createDiagnosticWithFix()` creates diagnostics with suggested fixes to automatically insert blank lines
+  - `findEndOfLine()` determines the correct position to insert newlines (handles inline comments)
 
 - **`cmd/newline-after-block/main.go`**: Command-line entry point
   - Uses `singlechecker.Main()` to create a standalone linter binary
@@ -28,6 +30,8 @@ The project has a simple but well-organized structure:
   - `testdata/src/caseclauses/` - tests for case clause spacing within switch/select statements
   - `testdata/src/structliterals/` - tests ensuring composite literals are not flagged
   - Tests use special `// want "..."` comments to verify expected diagnostics
+  - Golden files (`.go.golden`) contain expected output after applying automatic fixes
+  - `analysistest.RunWithSuggestedFixes()` verifies fixes produce correct output
 
 ## Key Linting Rules
 
@@ -49,6 +53,17 @@ It correctly ignores:
 - Blocks at the end of statement lists (implicit)
 - `if` statements followed by `else` or `else if`
 - Composite literals (struct, array, slice, map literals)
+
+## Autofix Capability
+
+The analyzer provides automatic fix suggestions that can insert the required blank lines:
+
+- **Command-line**: Use the `-fix` flag with the standalone binary to apply fixes automatically
+- **IDE integration**: Editors with gopls support (e.g., VSCode) show "Quick Fix" suggestions
+- **Implementation**: Each diagnostic includes a `SuggestedFix` with a `TextEdit` that inserts a newline at the correct position
+- **Inline comments**: The fix correctly handles inline comments by inserting the newline after them
+- **Idempotent**: Fixes can be applied multiple times without adverse effects
+- **Best practice**: Apply fixes only to code that's already been formatted with `gofmt` or `gofumpt`
 
 ## Development Commands
 
@@ -92,6 +107,7 @@ When adding new test cases, create or modify files in `testdata/src/<packagename
 
 - `// want "message"` on the line where a diagnostic is expected
 - The test framework will verify that the analyzer reports the expected diagnostic at that location
+- For autofix testing, create a corresponding `.go.golden` file with the expected output after applying the fix
 
 Example test pattern:
 
@@ -99,6 +115,16 @@ Example test pattern:
 if condition { // want "missing newline after block statement"
     doSomething()
 }
+nextStatement()
+```
+
+Corresponding `.go.golden` file:
+
+```go
+if condition {
+    doSomething()
+}
+
 nextStatement()
 ```
 

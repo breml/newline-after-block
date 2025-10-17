@@ -9,6 +9,7 @@ A Go linter that enforces blank lines after block statements to improve code rea
 ## Features
 
 - Detects missing newlines after block statements (`if`, `for`, `switch`, `select`, etc.)
+- **Automatic fix support** - can automatically insert missing blank lines (`-fix` flag)
 - Ignores composite literals (struct, array, slice, and map literals)
 - Skips checks for blocks at the end of functions
 - Respects `else` and `else if` clauses

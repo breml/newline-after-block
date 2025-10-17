@@ -28,7 +28,10 @@ switch and select statements. Each case block (except the last) should be
 followed by a blank line to improve readability.
 
 Composite literals (struct/array/slice literals) and struct type definitions
-are not considered block statements.`
+are not considered block statements.
+
+The analyzer provides automatic fix suggestions that insert the required blank
+lines.`
 
 type newlineafterblock struct {
 	exclude excludePatterns
@@ -144,7 +147,7 @@ func checkStatementPair(pass *analysis.Pass, astFile *ast.File, current, next as
 	// If no comment was found between the block and next statement,
 	// check if the next statement is immediately after (no blank line).
 	if !foundComment && nextLine == blockEndLine+1 {
-		pass.Reportf(blockEnd, "missing newline after block statement")
+		pass.Report(createDiagnosticWithFix(pass, blockEnd, "missing newline after block statement"))
 	}
 }
 
@@ -165,7 +168,7 @@ func checkCommentBetween(pass *analysis.Pass, astFile *ast.File, file *token.Fil
 		// Found a comment on a different line.
 		// If comment is on the next line (no blank line).
 		if commentLine == blockEndLine+1 {
-			pass.Reportf(blockEnd, "missing newline after block statement")
+			pass.Report(createDiagnosticWithFix(pass, blockEnd, "missing newline after block statement"))
 		}
 
 		// Only check the first non-inline comment.
@@ -212,7 +215,7 @@ func checkTrailingComment(pass *analysis.Pass, astFile *ast.File, file *token.Fi
 
 		// If comment is on the next line (no blank line).
 		if commentLine == blockEndLine+1 {
-			pass.Reportf(blockEnd, "missing newline after block statement")
+			pass.Report(createDiagnosticWithFix(pass, blockEnd, "missing newline after block statement"))
 		}
 
 		// Only check the first comment after the block.
@@ -269,7 +272,7 @@ func checkCaseClauseSpacing(pass *analysis.Pass, astFile *ast.File, current, nex
 
 	// If no comment was found, check if the next case is immediately after.
 	if !foundComment && nextCaseLine == lastStmtLine+1 {
-		pass.Reportf(lastStmtEnd, "missing newline after case block")
+		pass.Report(createDiagnosticWithFix(pass, lastStmtEnd, "missing newline after case block"))
 	}
 }
 
@@ -290,7 +293,7 @@ func checkClauseComment(pass *analysis.Pass, astFile *ast.File, file *token.File
 
 		// If comment is on the next line (no blank line).
 		if commentLine == endLine+1 {
-			pass.Reportf(endPos, "missing newline after case block")
+			pass.Report(createDiagnosticWithFix(pass, endPos, "missing newline after case block"))
 		}
 
 		// Only check the first non-inline comment.
@@ -350,7 +353,7 @@ func checkCommClauseSpacing(pass *analysis.Pass, astFile *ast.File, current, nex
 
 	// If no comment was found, check if the next comm is immediately after.
 	if !foundComment && nextCommLine == lastStmtLine+1 {
-		pass.Reportf(lastStmtEnd, "missing newline after case block")
+		pass.Report(createDiagnosticWithFix(pass, lastStmtEnd, "missing newline after case block"))
 	}
 }
 
@@ -422,4 +425,51 @@ func getBlockEnd(stmt ast.Stmt) token.Pos {
 	}
 
 	return token.NoPos
+}
+
+// findEndOfLine returns the position at the end of the line containing pos.
+// This handles inline comments automatically since we insert at end of current line.
+func findEndOfLine(file *token.File, pos token.Pos) token.Pos {
+	line := file.Line(pos)
+
+	// If not the last line, return the start of the next line
+	// (which is right after the newline character of the current line).
+	if line < file.LineCount() {
+		return file.LineStart(line + 1)
+	}
+
+	// Last line: return end of file.
+	return token.Pos(file.Base() + file.Size())
+}
+
+// createDiagnosticWithFix creates a diagnostic with a suggested fix to insert a blank line.
+func createDiagnosticWithFix(pass *analysis.Pass, blockEnd token.Pos, message string) analysis.Diagnostic {
+	file := pass.Fset.File(blockEnd)
+	if file == nil {
+		// Fallback: return diagnostic without fix
+		return analysis.Diagnostic{
+			Pos:     blockEnd,
+			Message: message,
+		}
+	}
+
+	// Find the end of the line containing blockEnd
+	insertPos := findEndOfLine(file, blockEnd)
+
+	return analysis.Diagnostic{
+		Pos:     blockEnd,
+		Message: message,
+		SuggestedFixes: []analysis.SuggestedFix{
+			{
+				Message: "Insert blank line after block statement",
+				TextEdits: []analysis.TextEdit{
+					{
+						Pos:     insertPos,
+						End:     insertPos,
+						NewText: []byte("\n"),
+					},
+				},
+			},
+		},
+	}
 }
