@@ -89,6 +89,7 @@ task test-coverage            # Generate coverage report (coverage.html)
 ```bash
 task lint                     # Run golangci-lint
 task lint-fix                 # Run golangci-lint with auto-fix
+task lint-markdown            # Run markdownlint-cli2 on all markdown files
 ```
 
 ### Running the linter
