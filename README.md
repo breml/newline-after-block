@@ -4,7 +4,8 @@ A Go linter that enforces blank lines after block statements to improve code rea
 
 ## Overview
 
-`newline-after-block` is a static analysis tool that checks for the presence of blank lines after block statements in Go code. This helps maintain consistent code formatting and improves readability by visually separating logical blocks of code.
+`newline-after-block` is a static analysis tool that checks for the presence of blank lines after block statements in Go code.
+This helps maintain consistent code formatting and improves readability by visually separating logical blocks of code.
 
 ## Features
 
@@ -201,7 +202,8 @@ Contributions are welcome! Please follow these guidelines:
 
 ## Background
 
-This linter was created to replace a shell script that used `sed` and `grep` to check for newlines after closing braces. The shell script had limitations:
+This linter was created to replace a shell script that used `sed` and `grep` to check for newlines after closing braces.
+The shell script had limitations:
 
 - Could not distinguish between block statements and composite literals
 - Did not handle ending of nested blocks correctly

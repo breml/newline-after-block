@@ -51,6 +51,14 @@ tasks:
     cmds:
       - golangci-lint run --fix
 
+  lint-markdown:
+    desc: Run markdownlint on all markdown files
+    silent: true
+    preconditions:
+      - sh: command -v markdownlint-cli2
+    cmds:
+      - markdownlint-cli2 '**/*.md' '!admin/pep/draft/*.md' 'AGENTS.md' --config .markdownlint.json
+
   run:
     desc: Run the linter on the project itself
     silent: true
@@ -79,4 +87,5 @@ tasks:
       - task: build
       - task: test
       - task: lint
+      - task: lint-markdown
       - task: run
