@@ -74,6 +74,20 @@ jobs:
           version: latest
           args: --timeout=5m
 
+  lint-markdown:
+    name: Lint Markdown
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: markdownlint-cli2
+        uses: DavidAnson/markdownlint-cli2-action@v20
+        with:
+          globs: |
+            **/*.md
+
   verify:
     name: Verify
     runs-on: ubuntu-latest
