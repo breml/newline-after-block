@@ -4,7 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-`newline-after-block` is a Go static analysis tool (linter) that enforces blank lines after block statements to improve code readability. It's built using the `golang.org/x/tools/go/analysis` framework and can be used standalone or integrated with golangci-lint. The analyzer supports automatic fixes that can insert missing blank lines via the `-fix` flag or through IDE quick-fix suggestions.
+`newline-after-block` is a Go static analysis tool (linter) that enforces blank lines after block statements to improve code
+readability. It's built using the `golang.org/x/tools/go/analysis` framework and can be used standalone or integrated with
+golangci-lint. The analyzer supports automatic fixes that can insert missing blank lines via the `-fix` flag or through IDE
+quick-fix suggestions.
 
 ## Architecture
 
@@ -136,7 +139,8 @@ Commit messages should be brief and to the point, following the Conventional Com
 Format: `<type>: <brief description>`
 
 Examples:
-```
+
+```text
 fix: Correct case clause spacing detection
 feat: Add support for nested switch statements
 docs: Update installation instructions
@@ -147,6 +151,7 @@ pep: Add proposal for multi-file analysis support
 ### PR Descriptions
 
 Pull request descriptions should be brief and to the point. Focus on:
+
 - What changes were made (bullet points preferred)
 - Why the changes were necessary (if not obvious)
 - Avoid lengthy explanations unless the changes are complex

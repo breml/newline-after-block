@@ -2,7 +2,8 @@
 
 ## Overview
 
-This proposal outlines the implementation plan for adding automatic fix (autofix) capability to the `newline-after-block` linter. The autofix feature will allow the linter to automatically insert missing newlines after block statements via command-line flag.
+This proposal outlines the implementation plan for adding automatic fix (autofix) capability to the `newline-after-block` linter.
+The autofix feature will allow the linter to automatically insert missing newlines after block statements via command-line flag.
 
 ## Motivation
 
@@ -98,7 +99,9 @@ Create helper functions to keep code DRY and maintainable:
 
 #### 2.1 `createDiagnosticWithFix`
 
-Since the current implementation only uses a fixed message string (`"missing newline after block statement"`), a simple `createDiagnosticWithFix` function is sufficient. However, if future enhancements require formatted messages, this could be extended to `createDiagnosticWithFixf` accepting `fmt.Sprintf`-style formatting:
+Since the current implementation only uses a fixed message string (`"missing newline after block statement"`), a simple
+`createDiagnosticWithFix` function is sufficient. However, if future enhancements require formatted messages, this could be extended
+to `createDiagnosticWithFixf` accepting `fmt.Sprintf`-style formatting:
 
 ```go
 func createDiagnosticWithFix(
@@ -137,7 +140,8 @@ func createDiagnosticWithFix(
 }
 ```
 
-**Note**: For the current implementation, the simple version without formatting is recommended. A formatted variant (`createDiagnosticWithFixf`) is not needed unless different error messages are required for different violation types.
+**Note**: For the current implementation, the simple version without formatting is recommended. A formatted variant
+(`createDiagnosticWithFixf`) is not needed unless different error messages are required for different violation types.
 
 #### 2.2 `findEndOfLine`
 
@@ -243,7 +247,9 @@ This is already handled by inserting at end of line.
 
 #### 4.2 Independent and Idempotent Fixes
 
-All fixes are designed to be independent and idempotent. Since this linter targets well-formatted Go code (users are expected to use `gofmt` or `gofumpt`), edge cases like multiple block statements on the same line are not a concern. Each fix inserts exactly one blank line, and applying the same fix multiple times has no additional effect.
+All fixes are designed to be independent and idempotent. Since this linter targets well-formatted Go code (users are expected to use
+`gofmt` or `gofumpt`), edge cases like multiple block statements on the same line are not a concern. Each fix inserts exactly one
+blank line, and applying the same fix multiple times has no additional effect.
 
 #### 4.3 Platform Line Endings
 
@@ -251,7 +257,8 @@ The implementation should use `\n` for consistency with Go conventions. The `go 
 
 #### 4.4 Preserving Subsequent Blank Lines
 
-If there are already multiple blank lines after a block (not a violation), the fix shouldn't affect them. Since we're only flagging cases with zero blank lines, this isn't an issue.
+If there are already multiple blank lines after a block (not a violation), the fix shouldn't affect them. Since we're only flagging
+cases with zero blank lines, this isn't an issue.
 
 ### 5. Implementation Steps
 
@@ -280,7 +287,8 @@ If there are already multiple blank lines after a block (not a violation), the f
 
 #### Phase 4: Validation
 
-**Note**: Validation is performed externally and manually, and is therefore out of scope for this proposal. The following activities are recommended for post-implementation validation:
+**Note**: Validation is performed externally and manually, and is therefore out of scope for this proposal. The following activities
+are recommended for post-implementation validation:
 
 1. Run the analyzer with fixes on this codebase itself
 2. Performance testing on large codebases
@@ -296,7 +304,8 @@ The autofix implementation is successful when:
 
 1. All existing tests continue to pass
 2. New tests with golden files verify correct fix application
-3. Running the analyzer with `-fix` flag on already properly formatted code (via `gofmt` or `gofumpt`) produces valid, formatted Go code with the required blank lines inserted
+3. Running the analyzer with `-fix` flag on already properly formatted code (via `gofmt` or `gofumpt`) produces valid, formatted Go
+   code with the required blank lines inserted
 4. VSCode with gopls shows "Quick Fix" suggestions
 5. Performance impact is negligible (< 5% slower than current implementation)
 

@@ -1,6 +1,8 @@
 # PEP 0002: Ensure Handling of Additional Edge Cases in newline-after-block Linter
 
-This document outlines the additional edge cases that the `newline-after-block` linter must handle to ensure robust functionality. The linter should correctly identify and enforce newline requirements after block statements while ignoring specific scenarios where newlines are not necessary.
+This document outlines the additional edge cases that the `newline-after-block` linter must handle to ensure robust functionality.
+The linter should correctly identify and enforce newline requirements after block statements while ignoring specific scenarios where
+newlines are not necessary.
 
 ## Additional Edge Cases to Handle
 

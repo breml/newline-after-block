@@ -2,7 +2,8 @@
 
 Create a linter that checks for a newline after block statements in Go code.
 
-The linter is expected to replace the existing shell script used for this purpose, which simply checks for a newline after the final curly brace of block statements but does not handle composite literals correctly.
+The linter is expected to replace the existing shell script used for this purpose, which simply checks for a newline after the
+final curly brace of block statements but does not handle composite literals correctly.
 
 The current shell script is as follows:
 
@@ -45,8 +46,10 @@ The linter should enforce the following rules:
 
 ## Implementation Details
 
-The linter will be implemented as a standalone tool that can be integrated into existing Go development workflows. It will be built using the Go programming language and will leverage the **Go AST** (Abstract Syntax Tree) to analyze code structure.
-The linter should follow the best practices outlined in the [New linters](https://golangci-lint.run/docs/contributing/new-linters/) guidelines from golangci-lint.
+The linter will be implemented as a standalone tool that can be integrated into existing Go development workflows. It will be built
+using the Go programming language and will leverage the **Go AST** (Abstract Syntax Tree) to analyze code structure.
+The linter should follow the best practices outlined in the [New linters](https://golangci-lint.run/docs/contributing/new-linters/)
+guidelines from golangci-lint.
 The linter should have decent test coverage to ensure reliability and maintainability.
 The linter should be checked for linting issues using `golangci-lint`.
 The repository should include a `Taskfile.yml` to facilitate common tasks such as building, testing, and running the linter.
