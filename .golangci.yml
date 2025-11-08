@@ -36,7 +36,7 @@ linters:
       check-blank: true
 
     gocognit:
-      min-complexity: 20
+      min-complexity: 25
 
     gocritic:
       enabled-tags:

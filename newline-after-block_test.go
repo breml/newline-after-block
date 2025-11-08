@@ -75,3 +75,17 @@ func TestAnalyzerCaseClausesWithFixes(t *testing.T) {
 	testdata := analysistest.TestData()
 	analysistest.RunWithSuggestedFixes(t, testdata, analyzer, "caseclauses")
 }
+
+func TestAnalyzerAnonymousFuncs(t *testing.T) {
+	analyzer := newlineafterblock.New()
+
+	testdata := analysistest.TestData()
+	analysistest.Run(t, testdata, analyzer, "anonymousfuncs")
+}
+
+func TestAnalyzerAnonymousFuncsWithFixes(t *testing.T) {
+	analyzer := newlineafterblock.New()
+
+	testdata := analysistest.TestData()
+	analysistest.RunWithSuggestedFixes(t, testdata, analyzer, "anonymousfuncs")
+}
