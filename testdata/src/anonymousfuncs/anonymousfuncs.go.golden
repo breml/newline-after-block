@@ -1,0 +1,148 @@
+package anonymousfuncs
+
+import "fmt"
+
+func assignmentStatement() {
+	_ = func() {
+		_ = 1
+	} // want "missing newline after block statement"
+
+	// Comment after anonymous function
+
+	// Another comment
+	fmt.Println("")
+}
+
+func assignmentStatementWithInlineComment() {
+	_ = func() {
+		_ = 1
+	} // Inline comment // want "missing newline after block statement"
+
+	// Comment after anonymous function
+
+	// Another comment
+	fmt.Println("")
+}
+
+func assignmentStatementCorrect() {
+	_ = func() {
+		_ = 1
+	}
+
+	// Comment after anonymous function
+	fmt.Println("")
+}
+
+func assignmentStatementLast() {
+	fmt.Println("before")
+	_ = func() {
+		_ = 1
+	} // want "missing newline after block statement"
+
+	// Comment after anonymous function
+}
+
+func varDeclaration() {
+	var f = func() {
+		_ = 1
+	} // want "missing newline after block statement"
+
+	// Comment after anonymous function
+
+	fmt.Println(f)
+}
+
+func varDeclarationCorrect() {
+	var f = func() {
+		_ = 1
+	}
+
+	// Comment after anonymous function
+	fmt.Println(f)
+}
+
+func shortVarDeclaration() {
+	f := func() {
+		_ = 1
+	} // want "missing newline after block statement"
+
+	// Comment after anonymous function
+
+	fmt.Println(f)
+}
+
+func shortVarDeclarationCorrect() {
+	f := func() {
+		_ = 1
+	}
+
+	// Comment after anonymous function
+	fmt.Println(f)
+}
+
+func multipleAssignments() {
+	// Immediately invoked function literals should NOT be flagged
+	// because the statement ends with ), not }
+	a, b := func() int {
+		return 1
+	}(), 2
+	fmt.Println(a, b)
+}
+
+func anonymousFunctionWithParams() {
+	f := func(x int) int {
+		return x * 2
+	} // want "missing newline after block statement"
+
+	fmt.Println(f(5))
+}
+
+func anonymousFunctionWithReturnType() {
+	var compute = func() (int, error) {
+		return 42, nil
+	} // want "missing newline after block statement"
+
+	fmt.Println(compute)
+}
+
+// These should NOT trigger the linter
+
+func returnStatement() {
+	_ = func() func() {
+		return func() {
+			// This return is at the end of the block, no newline needed
+		}
+	}
+}
+
+func functionCallArgument() {
+	func() {
+		_ = 1
+	}()
+	// This should not trigger because the statement ends with ), not }
+	fmt.Println("next")
+}
+
+func assignmentStatementAtEnd() {
+	_ = func() {
+		_ = 1
+	}
+}
+
+func varDeclarationWithStatement() {
+	fmt.Println("before")
+	var f = func() {
+		fmt.Println("inside")
+	} // want "missing newline after block statement"
+
+	fmt.Println(f)
+}
+
+func shortVarDeclarationWithStatement() {
+	fmt.Println("before")
+	f := func() {
+		fmt.Println("inside")
+	} // want "missing newline after block statement"
+
+	fmt.Println(f)
+}

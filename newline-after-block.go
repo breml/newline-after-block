@@ -357,6 +357,67 @@ func checkCommClauseSpacing(pass *analysis.Pass, astFile *ast.File, current, nex
 	}
 }
 
+// checkAssignStmt checks if an assignment statement contains a function literal.
+func checkAssignStmt(s *ast.AssignStmt) *ast.FuncLit {
+	for _, expr := range s.Rhs {
+		if funcLit := extractFuncLit(expr); funcLit != nil {
+			return funcLit
+		}
+	}
+
+	return nil
+}
+
+// checkDeclStmt checks if a declaration statement contains a function literal.
+func checkDeclStmt(s *ast.DeclStmt) *ast.FuncLit {
+	genDecl, ok := s.Decl.(*ast.GenDecl)
+	if !ok {
+		return nil
+	}
+
+	for _, spec := range genDecl.Specs {
+		if funcLit := checkValueSpec(spec); funcLit != nil {
+			return funcLit
+		}
+	}
+
+	return nil
+}
+
+// checkValueSpec checks if a value spec contains a function literal.
+func checkValueSpec(spec ast.Spec) *ast.FuncLit {
+	valueSpec, ok := spec.(*ast.ValueSpec)
+	if !ok {
+		return nil
+	}
+
+	for _, value := range valueSpec.Values {
+		if funcLit := extractFuncLit(value); funcLit != nil {
+			return funcLit
+		}
+	}
+
+	return nil
+}
+
+// extractFuncLit extracts a function literal from an expression.
+// Only returns function literals that are NOT immediately invoked,
+// since invoked function literals end with ), not }.
+func extractFuncLit(expr ast.Expr) *ast.FuncLit {
+	switch e := expr.(type) {
+	case *ast.FuncLit:
+		// Direct function literal: func() {}
+		return e
+
+	case *ast.CallExpr:
+		// Don't flag immediately invoked function literals: func() {}()
+		// These end with ), not }, so they shouldn't require a newline
+		return nil
+	}
+
+	return nil
+}
+
 // needsNewlineAfter determines if a statement needs a newline after it.
 func needsNewlineAfter(stmt ast.Stmt) bool {
 	switch s := stmt.(type) {
@@ -375,6 +436,12 @@ func needsNewlineAfter(stmt ast.Stmt) bool {
 
 	case *ast.SwitchStmt, *ast.TypeSwitchStmt, *ast.SelectStmt:
 		return true
+
+	case *ast.AssignStmt:
+		return checkAssignStmt(s) != nil
+
+	case *ast.DeclStmt:
+		return checkDeclStmt(s) != nil
 	}
 
 	return false
@@ -421,6 +488,16 @@ func getBlockEnd(stmt ast.Stmt) token.Pos {
 	case *ast.SelectStmt:
 		if s.Body != nil {
 			return s.Body.End()
+		}
+
+	case *ast.AssignStmt:
+		if funcLit := checkAssignStmt(s); funcLit != nil && funcLit.Body != nil {
+			return funcLit.Body.End()
+		}
+
+	case *ast.DeclStmt:
+		if funcLit := checkDeclStmt(s); funcLit != nil && funcLit.Body != nil {
+			return funcLit.Body.End()
 		}
 	}
 
