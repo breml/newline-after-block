@@ -24,6 +24,7 @@ The project has a simple but well-organized structure:
   - `findEndOfLine()` determines the correct position to insert newlines (handles inline comments)
   - `isErrorCheckIfStmt()` detects the `if err != nil` pattern for defer exceptions
   - `isErrNotNilPattern()` helper for error pattern matching
+  - `implementsError()` uses `types.Implements()` to check if a type implements the error interface
   - `isDeferStmt()` identifies defer statements
 
 - **`cmd/newline-after-block/main.go`**: Command-line entry point

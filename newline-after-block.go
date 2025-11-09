@@ -520,100 +520,30 @@ func isErrNotNilPattern(pass *analysis.Pass, x, y ast.Expr) bool {
 	return implementsError(typ)
 }
 
-// implementsError checks if a type implements the error interface.
+// implementsError checks if a type implements the error interface using types.Implements.
 func implementsError(typ types.Type) bool {
-	// Check if this is the error interface itself
-	if isErrorInterface(typ) {
-		return true
+	errorObj := types.Universe.Lookup("error")
+	if errorObj == nil {
+		return false
 	}
 
-	// Check if the underlying type is an interface that embeds or defines error
-	if isInterfaceWithError(typ) {
-		return true
+	errorObjType := errorObj.Type()
+	if errorObjType == nil {
+		return false
 	}
 
-	// Check if the type has Error() string method (value receiver)
-	if hasErrorMethod(typ) {
-		return true
+	underlying := errorObjType.Underlying()
+	if underlying == nil {
+		return false
 	}
 
-	// Check with pointer receiver
-	return hasErrorMethod(types.NewPointer(typ))
-}
-
-// isErrorInterface checks if the type is the built-in error interface.
-func isErrorInterface(typ types.Type) bool {
-	named, ok := typ.(*types.Named)
+	errorType, ok := underlying.(*types.Interface)
 	if !ok {
 		return false
 	}
 
-	obj := named.Obj()
-	return obj != nil && obj.Name() == "error" && obj.Pkg() == nil
-}
-
-// isInterfaceWithError checks if an interface type embeds error or has Error() string.
-func isInterfaceWithError(typ types.Type) bool {
-	iface, ok := typ.Underlying().(*types.Interface)
-	if !ok {
-		return false
-	}
-
-	// Check embedded interfaces
-	for i := 0; i < iface.NumEmbeddeds(); i++ {
-		if isErrorInterface(iface.EmbeddedType(i)) {
-			return true
-		}
-	}
-
-	// Check methods
-	for i := 0; i < iface.NumMethods(); i++ {
-		if isErrorMethod(iface.Method(i)) {
-			return true
-		}
-	}
-
-	return false
-}
-
-// hasErrorMethod checks if a type has the Error() string method.
-func hasErrorMethod(typ types.Type) bool {
-	methodSet := types.NewMethodSet(typ)
-	for i := 0; i < methodSet.Len(); i++ {
-		method := methodSet.At(i).Obj()
-		if fn, ok := method.(*types.Func); ok && isErrorMethod(fn) {
-			return true
-		}
-	}
-
-	return false
-}
-
-// isErrorMethod checks if a function matches the signature of error.Error() string.
-func isErrorMethod(fn *types.Func) bool {
-	if fn.Name() != "Error" {
-		return false
-	}
-
-	sig, ok := fn.Type().(*types.Signature)
-	if !ok {
-		return false
-	}
-
-	// Error() should have no parameters
-	if sig.Params() != nil && sig.Params().Len() != 0 {
-		return false
-	}
-
-	// Error() should return exactly one value of type string
-	results := sig.Results()
-	if results == nil || results.Len() != 1 {
-		return false
-	}
-
-	result := results.At(0)
-	basic, ok := result.Type().(*types.Basic)
-	return ok && basic.Kind() == types.String
+	// Check both value and pointer receiver cases.
+	return types.Implements(typ, errorType) || types.Implements(types.NewPointer(typ), errorType)
 }
 
 // isDeferStmt checks if a statement is a defer statement.
