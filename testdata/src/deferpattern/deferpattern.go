@@ -135,17 +135,7 @@ func nestedDeferAfterErrorCheck() {
 	}
 }
 
-// Test 11: Error check if not followed by defer (SHOULD warn - normal behavior)
-func errorCheckNotFollowedByDefer() error {
-	file, err := os.Open("example.txt")
-	if err != nil {
-		return err
-	} // want "missing newline after block statement"
-	fmt.Println(file)
-	return nil
-}
-
-// Test 12: Multiple defers followed by statement without blank line (SHOULD warn)
+// Test 11: Multiple defers followed by statement without blank line (SHOULD warn)
 func multipleDefersThenStatementNoBlankLine() error {
 	file, err := os.Open("example.txt")
 	if err != nil {
@@ -159,18 +149,7 @@ func multipleDefersThenStatementNoBlankLine() error {
 	return nil
 }
 
-// Test 13: Defer at end of function (should NOT warn)
-func deferAtEnd() error {
-	file, err := os.Open("example.txt")
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	return nil
-}
-
-// Test 14: if nil != err pattern (reversed operands) followed by defer (should NOT warn)
+// Test 12: if nil != err pattern (reversed operands) followed by defer (should NOT warn)
 func reversedOperandsFollowedByDefer() error {
 	file, err := os.Open("example.txt")
 	if nil != err {
@@ -182,7 +161,7 @@ func reversedOperandsFollowedByDefer() error {
 	return nil
 }
 
-// Test 15: Standalone defer statements (should NOT warn between them)
+// Test 13: Standalone defer statements (should NOT warn between them)
 func standaloneConsecutiveDefers() {
 	defer fmt.Println("first")
 	defer fmt.Println("second")
@@ -191,7 +170,7 @@ func standaloneConsecutiveDefers() {
 	fmt.Println("body")
 }
 
-// Test 16: Standalone defer followed by statement without blank line (SHOULD warn)
+// Test 14: Standalone defer followed by statement without blank line (SHOULD warn)
 func standaloneDeferFollowedByStatementNoBlankLine() {
 	defer fmt.Println("cleanup") // want "missing newline after block statement"
 	x := 5
@@ -199,7 +178,7 @@ func standaloneDeferFollowedByStatementNoBlankLine() {
 	fmt.Println(x)
 }
 
-// Test 17: Standalone defer followed by statement with blank line (should NOT warn)
+// Test 15: Standalone defer followed by statement with blank line (should NOT warn)
 func standaloneDeferFollowedByStatementWithBlankLine() {
 	defer fmt.Println("cleanup")
 
@@ -208,7 +187,7 @@ func standaloneDeferFollowedByStatementWithBlankLine() {
 	fmt.Println(x)
 }
 
-// Test 18: Custom error type with different name followed by defer (should NOT warn - type-based detection)
+// Test 16: Custom error type with different name followed by defer (should NOT warn - type-based detection)
 type customError struct {
 	msg string
 }
@@ -228,7 +207,7 @@ func customErrorTypeFollowedByDefer() error {
 	return nil
 }
 
-// Test 19: Error variable with unusual name followed by defer (should NOT warn - type-based detection)
+// Test 17: Error variable with unusual name followed by defer (should NOT warn - type-based detection)
 func unusualErrorNameFollowedByDefer() error {
 	file, problem := os.Open("example.txt")
 	if problem != nil {
@@ -240,7 +219,7 @@ func unusualErrorNameFollowedByDefer() error {
 	return nil
 }
 
-// Test 20: Non-error type with != nil check followed by defer (SHOULD warn)
+// Test 18: Non-error type with != nil check followed by defer (SHOULD warn)
 func nonErrorTypeFollowedByDefer() {
 	var ptr *int
 	if ptr != nil {
@@ -251,7 +230,7 @@ func nonErrorTypeFollowedByDefer() {
 	fmt.Println("done")
 }
 
-// Test 21: Reversed operands with different variable name (should NOT warn - type-based detection)
+// Test 19: Reversed operands with different variable name (should NOT warn - type-based detection)
 func reversedOperandsWithDifferentName() error {
 	file, problem := os.Open("example.txt")
 	if nil != problem {

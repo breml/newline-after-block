@@ -542,8 +542,17 @@ func implementsError(typ types.Type) bool {
 		return false
 	}
 
-	// Check both value and pointer receiver cases.
-	return types.Implements(typ, errorType) || types.Implements(types.NewPointer(typ), errorType)
+	// Check value receiver first.
+	if types.Implements(typ, errorType) {
+		return true
+	}
+
+	// Only check pointer receiver if typ is not already a pointer.
+	if _, ok := typ.(*types.Pointer); !ok {
+		return types.Implements(types.NewPointer(typ), errorType)
+	}
+
+	return false
 }
 
 // isDeferStmt checks if a statement is a defer statement.
